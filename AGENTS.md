@@ -53,3 +53,17 @@ proxy server. The UI talks to the Management API under `/v0/management`.
 Summarize the behavior changed, list verification performed, and identify remaining risks or
 unverified integration assumptions. If shared guidance changes and a local `CLAUDE.md` exists,
 keep it byte-for-byte identical to this file.
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues for `ankitgoyalio/Cli-Proxy-API-Management-Center`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Triage uses the five default canonical labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses a single-context layout. See `docs/agents/domain.md`.
