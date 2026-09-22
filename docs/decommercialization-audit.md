@@ -50,7 +50,7 @@ Compatible Backend configuration field rather than Management Center Promotion.
 
 ## Integration limits
 
-Browser inspection uses synthetic local state and mocked Management API responses. No live
-Compatible Backend or real provider credentials are available in this audit, so live provider
-mutations, OAuth completion, quota requests, plugin installation, and config persistence are not
-claimed as verified.
+Browser automation was unavailable in the implementation environment, and no live Compatible
+Backend or real provider credentials were available. Desktop and narrow-width route inspection,
+live provider mutations, OAuth completion, quota requests, plugin installation, and config
+persistence are therefore not claimed as verified.
