@@ -41,11 +41,11 @@ export const buildRepositoryURL = (repository: string) => {
   return `https://github.com/${trimmed.replace(/^\/+/, '')}`;
 };
 
-// The exact, fully-qualified prefix every first-party repository lives under.
+// The exact, fully-qualified prefix for repositories published by the upstream
+// Compatible Backend project.
 // Matching the whole URL (not just the extracted owner) prevents look-alike
-// hosts like "https://github.com.evil.com/router-for-me/..." from being
-// mistaken for the official org.
-export const OFFICIAL_PLUGIN_REPO_PREFIX = 'https://github.com/router-for-me/';
+// hosts like "https://github.com.evil.com/router-for-me/..." from being trusted.
+export const UPSTREAM_PLUGIN_REPO_PREFIX = 'https://github.com/router-for-me/';
 export const DEFAULT_PLUGIN_STORE_SOURCE_ID = 'official';
 const DEFAULT_PLUGIN_STORE_SOURCE_NAME = 'official';
 
@@ -59,19 +59,22 @@ export const getPluginRepositorySlug = (repository: string): string => {
   return repo ? `${owner}/${repo.replace(/\.git$/i, '')}` : owner;
 };
 
-// A repository is official only when its canonical github.com URL sits exactly
-// under the router-for-me org prefix. Slugs ("router-for-me/repo") and full URLs
-// are both normalized first; anything else (other hosts, look-alike domains,
-// other owners) is untrusted.
-export const isOfficialRepository = (repository: string): boolean =>
-  buildRepositoryURL(repository).toLowerCase().startsWith(OFFICIAL_PLUGIN_REPO_PREFIX);
+// A repository is upstream-published only when its canonical github.com URL
+// sits exactly under the router-for-me org prefix. Slugs ("router-for-me/repo")
+// and full URLs are both normalized first; anything else (other hosts,
+// look-alike domains, other owners) is untrusted.
+export const isUpstreamPublishedRepository = (repository: string): boolean =>
+  buildRepositoryURL(repository).toLowerCase().startsWith(UPSTREAM_PLUGIN_REPO_PREFIX);
 
-// Both the backend-assigned source identity and repository must be official.
-// A third-party registry can copy repository metadata, so repository alone is
-// insufficient to bypass the third-party installation gate.
-export const isOfficialPlugin = (entry: PluginStoreEntry): boolean =>
+// Both the backend-assigned built-in source identity and upstream repository
+// must match. A third-party registry can copy repository metadata, so repository
+// alone is insufficient to bypass the third-party installation gate.
+export const isTrustedUpstreamPlugin = (entry: PluginStoreEntry): boolean =>
   entry.sourceId.trim().toLowerCase() === DEFAULT_PLUGIN_STORE_SOURCE_ID &&
-  isOfficialRepository(entry.repository);
+  isUpstreamPublishedRepository(entry.repository);
+
+export const requiresThirdPartyPluginWarning = (entry: PluginStoreEntry): boolean =>
+  !isTrustedUpstreamPlugin(entry);
 
 export const isDefaultPluginStoreSource = (
   entry: Pick<PluginStoreEntry, 'sourceId' | 'sourceName'>

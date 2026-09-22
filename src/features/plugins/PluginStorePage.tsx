@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import {
-  IconAlertTriangle,
   IconDownload,
   IconExternalLink,
   IconGithub,
@@ -25,11 +24,12 @@ import type { PluginStoreEntry, PluginStoreResponse } from '@/types';
 import {
   buildRepositoryURL,
   isDefaultPluginStoreSource,
-  isOfficialPlugin,
   notifyPluginResourcesChanged,
+  requiresThirdPartyPluginWarning,
   resolvePluginAssetURL,
 } from './pluginResources';
 import { PluginInstallGateModal } from './components/PluginInstallGateModal';
+import { PluginTrustBadge } from './components/PluginTrustBadge';
 import {
   buildGitHubReleasesPageURL,
   fetchPluginReleaseVersions,
@@ -446,7 +446,7 @@ function PluginInstallOptionsModal({
             {t('common.cancel')}
           </Button>
           <Button
-            variant={isOfficialPlugin(entry) ? 'primary' : 'danger'}
+            variant={requiresThirdPartyPluginWarning(entry) ? 'danger' : 'primary'}
             onClick={onConfirm}
             disabled={confirmDisabled}
             loading={installing}
@@ -478,7 +478,7 @@ export function PluginStorePage() {
   const [overflowingDescriptionKeys, setOverflowingDescriptionKeys] = useState<string[]>([]);
   const descriptionRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
 
-  // Multi-step install gauntlet, shown only for non-official (third-party) plugins.
+  // Multi-step install gauntlet, shown only for untrusted third-party plugins.
   const [gateOpen, setGateOpen] = useState(false);
   const [gateEntry, setGateEntry] = useState<PluginStoreEntry | null>(null);
   const [gateIsUpdate, setGateIsUpdate] = useState(false);
@@ -755,7 +755,7 @@ export function PluginStorePage() {
     const requestedVersion = installVersion.trim();
 
     // Third-party plugins must clear the multi-step confirmation gauntlet first.
-    if (!isOfficialPlugin(installOptionsEntry)) {
+    if (requiresThirdPartyPluginWarning(installOptionsEntry)) {
       setGateEntry(installOptionsEntry);
       setGateIsUpdate(installOptionsIsUpdate);
       setGateRequestedVersion(requestedVersion);
@@ -792,7 +792,6 @@ export function PluginStorePage() {
     const repositoryURL = buildRepositoryURL(entry.repository);
     const homepageURL = /^https?:\/\//i.test(entry.homepage) ? entry.homepage : '';
     const isUpdate = entry.installed && entry.updateAvailable;
-    const isOfficial = isOfficialPlugin(entry);
     const versionText =
       isUpdate && entry.installedVersion && entry.version
         ? t('plugin_store.version_arrow', { from: entry.installedVersion, to: entry.version })
@@ -840,12 +839,7 @@ export function PluginStorePage() {
             <span className={styles.cardId}>{entry.id}</span>
           </div>
           <div className={styles.cardBadges}>
-            {!isOfficial ? (
-              <span className={styles.badgeUntrusted}>
-                <IconAlertTriangle size={11} />
-                {t('plugin_store.badge_untrusted')}
-              </span>
-            ) : null}
+            <PluginTrustBadge entry={entry} />
             {isUpdate ? (
               <span className={styles.badgeWarning}>{t('plugin_store.badge_update')}</span>
             ) : entry.installed ? (
