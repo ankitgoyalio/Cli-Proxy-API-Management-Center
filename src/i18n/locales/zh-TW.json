@@ -1630,7 +1630,6 @@
     },
     "categories": {
       "title": "提供商",
-      "quickFill": "快速接入",
       "activeCount": "{{active}}/{{total}} 活躍"
     },
     "providerNames": {
@@ -1669,7 +1668,6 @@
     "sponsor": {
       "protocolSummary": "Anthropic / OpenAI / Gemini / Codex API (Responses)",
       "detailHint": "{{provider}} 會按協議分別寫入對應的 API Key 設定,此處只做聚合管理。",
-      "registerLink": "點此註冊",
       "dashboardLink": "控制面板",
       "apiKeyHint": "此金鑰只會寫入目前選擇的分組/協議設定。",
       "usageCheck": "查詢額度",

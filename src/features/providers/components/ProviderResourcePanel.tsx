@@ -3,7 +3,6 @@ import { IconExternalLink, IconPlus, IconSearch } from '@/components/ui/icons';
 import type { ProviderRecentUsageMap } from '@/components/providers/utils';
 import { PROVIDER_LOGOS } from '../brandLogos';
 import { APIKEY_FUN_DASHBOARD_URL } from '../sponsor';
-import { getSponsorProviderDefinition } from '../sponsorDefinitions';
 import type { ProviderGroup, ProviderResource } from '../types';
 import { ProviderResourceTable } from './ProviderResourceTable';
 import { ProviderResourceToolbar } from './ProviderResourceToolbar';
@@ -56,10 +55,6 @@ export function ProviderResourcePanel({
   const providerTitle = t(`providersPage.providerNames.${group.id}`);
   const hasProviderInfo = group.resources.length > 0;
   const showSponsorDashboardLink = group.id === 'apikeyFun' && hasProviderInfo;
-  const registrationUrl =
-    group.id === 'fennoAI' || group.id === 'qiniuCloud'
-      ? getSponsorProviderDefinition(group.id).affiliateUrl
-      : null;
   const logoClassName = [
     styles.logo,
     logo?.themeSurface ? styles.logoThemeSurface : '',
@@ -108,20 +103,6 @@ export function ProviderResourcePanel({
                 </span>
                 <IconExternalLink className={styles.sponsorLinkIcon} size={14} />
               </a>
-            ) : registrationUrl ? (
-              <>
-                <a
-                  className={[styles.sponsorLink, styles.sponsorLinkEmphasis].join(' ')}
-                  href={registrationUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span className={styles.sponsorLinkText}>
-                    {t('providersPage.sponsor.registerLink')}
-                  </span>
-                  <IconExternalLink className={styles.sponsorLinkIcon} size={14} />
-                </a>
-              </>
             ) : null}
           </div>
           <div className={styles.searchWrap}>

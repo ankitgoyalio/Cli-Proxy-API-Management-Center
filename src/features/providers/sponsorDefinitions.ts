@@ -8,7 +8,6 @@ import {
   resolveApiKeyFunBaseUrl,
 } from './sponsor';
 import {
-  FENNO_AI_AFFILIATE_URL,
   FENNO_AI_BASE_URL_OPTIONS,
   FENNO_AI_DISPLAY_NAME,
   FENNO_AI_PROTOCOL_LABELS,
@@ -17,7 +16,6 @@ import {
   resolveFennoAIBaseUrl,
 } from './fennoAI';
 import {
-  QINIU_CLOUD_AFFILIATE_URL,
   QINIU_CLOUD_BASE_URL_OPTIONS,
   QINIU_CLOUD_DISPLAY_NAME,
   QINIU_CLOUD_PROTOCOL_LABELS,
@@ -61,7 +59,6 @@ export interface SponsorProviderDefinition {
   brand: SponsorProviderBrand;
   displayName: string;
   providerName: string;
-  affiliateUrl?: string;
   dashboardUrl?: string;
   protocols: readonly SponsorProtocol[];
   protocolLabels: readonly string[];
@@ -90,7 +87,6 @@ const SPONSOR_DEFINITIONS: Record<SponsorProviderBrand, SponsorProviderDefinitio
     brand: 'fennoAI',
     displayName: FENNO_AI_DISPLAY_NAME,
     providerName: FENNO_AI_PROVIDER_NAME,
-    affiliateUrl: FENNO_AI_AFFILIATE_URL,
     protocols: ['codex', 'claude'],
     protocolLabels: FENNO_AI_PROTOCOL_LABELS,
     defaultProtocol: 'codex',
@@ -103,7 +99,6 @@ const SPONSOR_DEFINITIONS: Record<SponsorProviderBrand, SponsorProviderDefinitio
     brand: 'qiniuCloud',
     displayName: QINIU_CLOUD_DISPLAY_NAME,
     providerName: QINIU_CLOUD_PROVIDER_NAME,
-    affiliateUrl: QINIU_CLOUD_AFFILIATE_URL,
     protocols: ['openai', 'claude', 'gemini', 'codex'],
     protocolLabels: QINIU_CLOUD_PROTOCOL_LABELS,
     defaultProtocol: 'openai',

@@ -132,23 +132,6 @@
   }
 }
 
-.sponsorLinkEmphasis {
-  color: var(--amber-text);
-  border-color: color-mix(in srgb, var(--amber-color) 48%, var(--border-color));
-  background: color-mix(in srgb, var(--amber-color) 14%, var(--bg-primary));
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--amber-color) 18%, transparent);
-
-  &:hover {
-    border-color: color-mix(in srgb, var(--amber-color) 72%, var(--border-color));
-    background: color-mix(in srgb, var(--amber-color) 20%, var(--bg-primary));
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--amber-color) 18%, transparent);
-  }
-
-  &:focus-visible {
-    outline-color: var(--amber-color);
-  }
-}
-
 .sponsorLinkText {
   min-width: 0;
   overflow-wrap: anywhere;

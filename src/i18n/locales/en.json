@@ -1606,7 +1606,6 @@
     },
     "categories": {
       "title": "Providers",
-      "quickFill": "Quick Fill",
       "activeCount": "{{active}}/{{total}} active"
     },
     "providerNames": {
@@ -1645,7 +1644,6 @@
     "sponsor": {
       "protocolSummary": "Anthropic / OpenAI / Gemini / Codex API (Responses)",
       "detailHint": "{{provider}} is persisted into the matching API key configs by protocol; this view manages them together.",
-      "registerLink": "Register here",
       "dashboardLink": "Dashboard",
       "apiKeyHint": "This key is only written to the selected group/protocol config.",
       "usageCheck": "Check usage",
