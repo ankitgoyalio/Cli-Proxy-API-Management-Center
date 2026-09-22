@@ -3,31 +3,23 @@ import { IconLoader2, IconPlus, IconRefreshCw } from '@/components/ui/icons';
 import styles from './ProviderHeaderCard.module.scss';
 
 interface ProviderHeaderCardProps {
-  title?: string;
   totalActive: number;
   totalResources: number;
   providerFamilies: number;
   updatedAtLabel: string;
   isFetching?: boolean;
   isNewDisabled?: boolean;
-  showNewAction?: boolean;
-  showSummary?: boolean;
-  newLabel?: string;
   onRefresh: () => void;
   onNew: () => void;
 }
 
 export function ProviderHeaderCard({
-  title,
   totalActive,
   totalResources,
   providerFamilies,
   updatedAtLabel,
   isFetching = false,
   isNewDisabled = false,
-  showNewAction = true,
-  showSummary = true,
-  newLabel,
   onRefresh,
   onNew,
 }: ProviderHeaderCardProps) {
@@ -36,7 +28,7 @@ export function ProviderHeaderCard({
     <section className={styles.card}>
       <div className={styles.row}>
         <div className={styles.titleArea}>
-          <h1 className={styles.title}>{title ?? t('providersPage.header.title')}</h1>
+          <h1 className={styles.title}>{t('providersPage.header.title')}</h1>
         </div>
         <div className={styles.actions}>
           <button
@@ -55,36 +47,32 @@ export function ProviderHeaderCard({
               {isFetching ? t('providersPage.actions.syncing') : t('providersPage.actions.refresh')}
             </span>
           </button>
-          {showNewAction ? (
-            <button
-              type="button"
-              className={`${styles.btn} ${styles.btnPrimary}`}
-              onClick={onNew}
-              disabled={isNewDisabled}
-            >
-              <IconPlus size={16} />
-              <span>{newLabel ?? t('providersPage.actions.new')}</span>
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            onClick={onNew}
+            disabled={isNewDisabled}
+          >
+            <IconPlus size={16} />
+            <span>{t('providersPage.actions.new')}</span>
+          </button>
         </div>
       </div>
 
-      {showSummary ? (
-        <div className={styles.chips}>
-          <span className={`${styles.chip} ${styles.chipPrimary}`}>
-            {t('providersPage.header.activeResources', {
-              active: totalActive,
-              total: totalResources,
-            })}
-          </span>
-          <span className={styles.chip}>
-            {t('providersPage.header.providerFamilies', { count: providerFamilies })}
-          </span>
-          <span className={styles.chip}>
-            {t('providersPage.header.updatedAt', { time: updatedAtLabel })}
-          </span>
-        </div>
-      ) : null}
+      <div className={styles.chips}>
+        <span className={`${styles.chip} ${styles.chipPrimary}`}>
+          {t('providersPage.header.activeResources', {
+            active: totalActive,
+            total: totalResources,
+          })}
+        </span>
+        <span className={styles.chip}>
+          {t('providersPage.header.providerFamilies', { count: providerFamilies })}
+        </span>
+        <span className={styles.chip}>
+          {t('providersPage.header.updatedAt', { time: updatedAtLabel })}
+        </span>
+      </div>
     </section>
   );
 }
