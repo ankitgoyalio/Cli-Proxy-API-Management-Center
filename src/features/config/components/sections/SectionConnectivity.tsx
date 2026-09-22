@@ -7,6 +7,7 @@ import { SectionCard } from '../SectionCard';
 import { Divider, FieldAnchor, FieldGrid, FieldStack, ToggleRow } from '../fields/FieldPrimitives';
 import { ApiKeysField, HostField, PortField } from '../fields/sharedFields';
 import { getValidationMessage } from '../blocks/shared';
+import { forkPolicy } from '@/policies/forkPolicy';
 
 const Icon = CONFIG_TAB_ICONS.connectivity;
 
@@ -143,7 +144,7 @@ export function SectionConnectivity({
               <FieldAnchor fieldId="rmPanelRepo">
                 <Input
                   label={t('config_management.visual.sections.remote.panel_repo')}
-                  placeholder="https://github.com/router-for-me/Cli-Proxy-API-Management-Center"
+                  placeholder={forkPolicy.managementCenter.source}
                   value={values.rmPanelRepo}
                   onChange={(e) => onChange({ rmPanelRepo: e.target.value })}
                   disabled={disabled}

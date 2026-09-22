@@ -17,6 +17,7 @@ import { useApiKeysForModels } from '@/hooks/useApiKeysForModels';
 import { formatDateTimeValue } from '@/utils/format';
 import { classifyModels } from '@/utils/models';
 import { STORAGE_KEY_AUTH } from '@/utils/constants';
+import { forkPolicy } from '@/policies/forkPolicy';
 import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
 import iconGemini from '@/assets/icons/gemini.svg';
 import iconClaude from '@/assets/icons/claude.svg';
@@ -301,6 +302,9 @@ export function SystemPage() {
           <div className={styles.aboutHeader}>
             <img src={INLINE_LOGO_JPEG} alt="CPAMC" className={styles.aboutLogo} />
             <div className={styles.aboutTitle}>{t('system_info.about_title')}</div>
+            <p className={styles.independenceStatement}>
+              {t('system_info.independence_statement')}
+            </p>
           </div>
 
           <div className={styles.aboutInfoGrid}>
@@ -351,7 +355,7 @@ export function SystemPage() {
           <p className={styles.sectionDescription}>{t('system_info.quick_links_desc')}</p>
           <div className={styles.quickLinks}>
             <a
-              href="https://github.com/router-for-me/CLIProxyAPI"
+              href={forkPolicy.compatibleBackend.source}
               target="_blank"
               rel="noopener noreferrer"
               className={styles.linkCard}
@@ -369,7 +373,7 @@ export function SystemPage() {
             </a>
 
             <a
-              href="https://github.com/router-for-me/Cli-Proxy-API-Management-Center"
+              href={forkPolicy.managementCenter.source}
               target="_blank"
               rel="noopener noreferrer"
               className={styles.linkCard}
@@ -387,7 +391,7 @@ export function SystemPage() {
             </a>
 
             <a
-              href="https://help.router-for.me/"
+              href={forkPolicy.compatibleBackend.help}
               target="_blank"
               rel="noopener noreferrer"
               className={styles.linkCard}
