@@ -4,10 +4,12 @@
 
 [English](README.md)
 
-**主项目**: https://github.com/router-for-me/CLIProxyAPI  
+**兼容后端**: https://github.com/router-for-me/CLIProxyAPI
 **最低版本要求**: ≥ 7.2.147（推荐最新）
 
-从6.0.19版本开始，Web UI 随主程序一起提供；服务运行后，通过 API 端口上的"/management.html"访问它。
+此分支由独立维护，与 Router-For.ME 或应用中列出的任何提供商均无关联，也未获得其认可或赞助。
+
+从 6.0.19 版本开始，Web UI 随兼容后端一起提供；服务运行后，通过 API 端口上的 `/management.html` 访问它。
 
 ## 这是什么（以及不是什么）
 
