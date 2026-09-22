@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { IconExternalLink, IconPlus, IconSearch } from '@/components/ui/icons';
 import type { ProviderRecentUsageMap } from '@/components/providers/utils';
 import { PROVIDER_LOGOS } from '../brandLogos';
-import { getKimiAffiliateUrl } from '../kimi';
 import { APIKEY_FUN_DASHBOARD_URL } from '../sponsor';
 import { getSponsorProviderDefinition } from '../sponsorDefinitions';
 import type { ProviderGroup, ProviderResource } from '../types';
@@ -52,20 +51,15 @@ export function ProviderResourcePanel({
   onToggleDisabled,
   onCreate,
 }: ProviderResourcePanelProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const logo = PROVIDER_LOGOS[group.id];
   const providerTitle = t(`providersPage.providerNames.${group.id}`);
   const hasProviderInfo = group.resources.length > 0;
   const showSponsorDashboardLink = group.id === 'apikeyFun' && hasProviderInfo;
   const registrationUrl =
-    group.id === 'kimi'
-      ? getKimiAffiliateUrl(i18n.resolvedLanguage ?? i18n.language)
-      : group.id === 'fennoAI' || group.id === 'qiniuCloud'
-        ? getSponsorProviderDefinition(group.id).affiliateUrl
-        : null;
-  const registrationLabel = t(
-    group.id === 'kimi' ? 'providersPage.sponsor.registerNow' : 'providersPage.sponsor.registerLink'
-  );
+    group.id === 'fennoAI' || group.id === 'qiniuCloud'
+      ? getSponsorProviderDefinition(group.id).affiliateUrl
+      : null;
   const logoClassName = [
     styles.logo,
     logo?.themeSurface ? styles.logoThemeSurface : '',
@@ -117,23 +111,16 @@ export function ProviderResourcePanel({
             ) : registrationUrl ? (
               <>
                 <a
-                  className={[
-                    styles.sponsorLink,
-                    styles.sponsorLinkEmphasis,
-                    group.id === 'kimi' ? styles.sponsorLinkKimi : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
+                  className={[styles.sponsorLink, styles.sponsorLinkEmphasis].join(' ')}
                   href={registrationUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <span className={styles.sponsorLinkText}>{registrationLabel}</span>
+                  <span className={styles.sponsorLinkText}>
+                    {t('providersPage.sponsor.registerLink')}
+                  </span>
                   <IconExternalLink className={styles.sponsorLinkIcon} size={14} />
                 </a>
-                {group.id === 'kimi' ? (
-                  <p className={styles.kimiPromo}>{t('providersPage.sponsor.kimiPromo')}</p>
-                ) : null}
               </>
             ) : null}
           </div>
