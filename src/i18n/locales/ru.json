@@ -1600,7 +1600,6 @@
     },
     "categories": {
       "title": "Провайдеры",
-      "quickFill": "Быстрое заполнение",
       "activeCount": "{{active}}/{{total}} активных"
     },
     "providerNames": {
@@ -1639,7 +1638,6 @@
     "sponsor": {
       "protocolSummary": "Anthropic / OpenAI / Gemini / Codex API (Responses)",
       "detailHint": "{{provider}} сохраняется в соответствующие конфигурации API key по протоколам; здесь они управляются вместе.",
-      "registerLink": "Зарегистрироваться",
       "dashboardLink": "Панель управления",
       "apiKeyHint": "Этот ключ записывается только в выбранную группу/протокол.",
       "usageCheck": "Проверить квоту",
