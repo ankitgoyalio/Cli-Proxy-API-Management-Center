@@ -15,6 +15,9 @@ proxy server. The UI talks to the Management API under `/v0/management`.
 - **Git/GitHub:** Before syncing or changing Git history, mutating GitHub state, or writing
   issue, pull-request, tag, or release references, read
   [`.agents/GIT-GITHUB.md`](.agents/GIT-GITHUB.md).
+- **Fork maintenance:** Preserve the independence, no-promotion, link-ownership, plugin
+  provenance, synchronization, and release rules in
+  [`docs/fork-maintenance.md`](docs/fork-maintenance.md).
 
 ## Implementation boundaries
 
