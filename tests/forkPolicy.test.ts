@@ -27,6 +27,13 @@ describe('fork policy', () => {
     expect(forkPolicy.mayRenderPromotionalRegistration).toBe(false);
   });
 
+  test('owns the neutral dashboard destination for configured APIKEY.FUN integrations', () => {
+    expect(forkPolicy.providerIntegrations.apikeyFun).toEqual({
+      dashboard: 'https://apikey.fan/dashboard',
+    });
+    expect(forkPolicy.providerIntegrations.apikeyFun.dashboard).not.toMatch(/[?&](aff|ref)=/i);
+  });
+
   test('localizes the independence statement in every supported language', () => {
     const statements = [zhCN, zhTW, en, ru].map(
       (catalog) => catalog.system_info.independence_statement

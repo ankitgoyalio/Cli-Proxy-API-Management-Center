@@ -1,5 +1,4 @@
 import {
-  APIKEY_FUN_AFFILIATE_URL,
   APIKEY_FUN_BASE_URL_OPTIONS,
   APIKEY_FUN_DASHBOARD_URL,
   APIKEY_FUN_DISPLAY_NAME,
@@ -78,7 +77,6 @@ const SPONSOR_DEFINITIONS: Record<SponsorProviderBrand, SponsorProviderDefinitio
     brand: 'apikeyFun',
     displayName: APIKEY_FUN_DISPLAY_NAME,
     providerName: APIKEY_FUN_PROVIDER_NAME,
-    affiliateUrl: APIKEY_FUN_AFFILIATE_URL,
     dashboardUrl: APIKEY_FUN_DASHBOARD_URL,
     protocols: ['codex', 'claude', 'openai'],
     protocolLabels: APIKEY_FUN_PROTOCOLS,
@@ -129,10 +127,7 @@ const SPONSOR_DEFINITIONS: Record<SponsorProviderBrand, SponsorProviderDefinitio
 };
 
 export const isMultiProtocolSponsorBrand = (brand: ProviderBrand): brand is SponsorProviderBrand =>
-  brand === 'apikeyFun' ||
-  brand === 'fennoAI' ||
-  brand === 'qiniuCloud' ||
-  brand === 'kimi';
+  brand === 'apikeyFun' || brand === 'fennoAI' || brand === 'qiniuCloud' || brand === 'kimi';
 
 export type SponsorAggregationConflict = 'multiple-configs' | 'multiple-openai-keys';
 

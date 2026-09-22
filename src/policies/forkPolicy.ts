@@ -12,5 +12,10 @@ export const forkPolicy = {
     source: 'https://github.com/router-for-me/CLIProxyAPI',
     help: 'https://help.router-for.me/',
   },
+  providerIntegrations: {
+    apikeyFun: {
+      dashboard: 'https://apikey.fan/dashboard',
+    },
+  },
   mayRenderPromotionalRegistration: false,
 } as const;
