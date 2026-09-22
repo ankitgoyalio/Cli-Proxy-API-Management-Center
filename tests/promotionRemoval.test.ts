@@ -47,12 +47,13 @@ describe('promotion removal', () => {
 
   test('defines every statically referenced translation in each locale', () => {
     const translationKeys = new Set<string>();
-    const translationPattern = /(?:\bt|i18n\.t)\(\s*['"]([^'"]+)['"]|i18nKey=['"]([^'"]+)['"]/g;
+    const translationPattern =
+      /(?:\bt|i18n\.t)\(\s*['"]([^'"]+)['"]|i18nKey=['"]([^'"]+)['"]|\b[A-Za-z][A-Za-z0-9]*Key\s*:\s*['"]([^'"]+\.[^'"]+)['"]/g;
 
     for (const file of new Bun.Glob('src/**/*.{ts,tsx}').scanSync({ onlyFiles: true })) {
       const source = readFileSync(file, 'utf8');
       for (const match of source.matchAll(translationPattern)) {
-        translationKeys.add(match[1] ?? match[2]);
+        translationKeys.add(match[1] ?? match[2] ?? match[3]);
       }
     }
 
