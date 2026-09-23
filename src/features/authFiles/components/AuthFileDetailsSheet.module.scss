@@ -6,6 +6,11 @@
   gap: 16px;
 }
 
+.revealRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .loading {
   display: flex;
   align-items: center;

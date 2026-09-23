@@ -1,5 +1,5 @@
-import { useCallback, useMemo, type MouseEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +17,7 @@ import {
   supportsAuthFileWebsockets,
 } from '@/features/authFiles/constants';
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
+import { maskAccountEmail, presentAuthFileName } from '@/features/authFiles/presentation';
 import { AuthFileExcludedModelsField } from './AuthFileExcludedModelsField';
 import styles from './AuthFileDetailsSheet.module.scss';
 
@@ -32,6 +33,52 @@ const DERIVED_INFO_KEYS = [
   // 'email' 不在此列：后端原始键名与 camelCase 同形，删掉会藏起真实数据。
   'projectId',
 ];
+
+const readEmail = (value: unknown): string =>
+  typeof value === 'string' && maskAccountEmail(value) ? value.trim() : '';
+const emailInTextPattern = /[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)*\.[A-Z]{2,}/gi;
+
+const emailsFromJson = (text: string): string[] => {
+  try {
+    const value = JSON.parse(text) as unknown;
+    const emails: string[] = [];
+    const visit = (item: unknown) => {
+      if (!item || typeof item !== 'object') return;
+      for (const [key, child] of Object.entries(item)) {
+        if (key.toLowerCase() === 'email') {
+          const email = readEmail(child);
+          if (email) emails.push(email);
+        }
+        visit(child);
+      }
+    };
+    visit(value);
+    return emails;
+  } catch {
+    // Invalid content can still contain an email field.
+  }
+  return [...text.matchAll(/"email"\s*:\s*"([^"]+)"/gi)]
+    .map((match) => readEmail(match[1]))
+    .filter(Boolean);
+};
+
+function displayCredentialText(
+  text: string,
+  fileName: string,
+  emails: string[],
+  hiddenName: string
+): string {
+  let displayed = text;
+  if (fileName) {
+    const filenameEmail = emails.find((email) => fileName.includes(email)) ?? '';
+    const safeName = presentAuthFileName(fileName, filenameEmail, false, hiddenName);
+    displayed = displayed.split(fileName).join(safeName);
+  }
+  for (const email of emails) {
+    displayed = displayed.split(email).join(maskAccountEmail(email) ?? email);
+  }
+  return displayed.replace(emailInTextPattern, (email) => maskAccountEmail(email) ?? email);
+}
 
 export type AuthFileDetailsSheetProps = {
   disableControls: boolean;
@@ -51,9 +98,18 @@ export type AuthFileDetailsSheetProps = {
 export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { disableControls, editor, updatedText, dirty, onClose, onCopyText, onSave, onChange } =
     props;
   const showConfirmation = useNotificationStore((state) => state.showConfirmation);
+  const [revealState, setRevealState] = useState<{ fileName: string; routeKey: string } | null>(
+    null
+  );
+  const fileName = editor?.fileName;
+  const isOpen = Boolean(editor);
+  const revealed =
+    isOpen && revealState?.fileName === fileName && revealState?.routeKey === location.key;
+  useEffect(() => setRevealState(null), [fileName, isOpen, location.key]);
 
   const confirmClose = useCallback((): boolean | Promise<boolean> => {
     if (!dirty || editor?.saving === true) return true;
@@ -99,6 +155,19 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
   const previewText = formatJsonText(updatedText);
   const invalidContentPreview = editor?.invalidContentPreview ?? '';
   const fileInfoText = editor?.fileInfoText ?? '';
+  const emails = useMemo(
+    () => [
+      ...new Set(
+        [
+          ...emailsFromJson(fileInfoText),
+          ...emailsFromJson(updatedText),
+          ...emailsFromJson(invalidContentPreview),
+        ].filter(Boolean)
+      ),
+    ],
+    [fileInfoText, updatedText, invalidContentPreview]
+  );
+  const hiddenName = t('auth_files.hidden_auth_file_name');
   const displayInfoText = useMemo(() => {
     if (!fileInfoText) return '';
     try {
@@ -116,6 +185,16 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
     return fileInfoText;
   }, [fileInfoText]);
 
+  const display = (text: string) =>
+    revealed ? text : displayCredentialText(text, editor?.fileName ?? '', emails, hiddenName);
+  const showReveal = Boolean(
+    emails.length ||
+    editor?.fileName.includes('@') ||
+    [fileInfoText, updatedText, invalidContentPreview].some((text) =>
+      new RegExp(emailInTextPattern.source, 'i').test(text)
+    )
+  );
+
   return (
     <Sheet
       open={Boolean(editor)}
@@ -124,7 +203,7 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
       size="md"
       closeDisabled={editor?.saving === true}
       eyebrow={t('auth_files.prefix_proxy_button')}
-      title={editor?.fileName ?? ''}
+      title={display(editor?.fileName ?? '')}
       footer={
         <>
           <Button
@@ -163,6 +242,23 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
     >
       {editor && (
         <div className={styles.editor}>
+          {showReveal && (
+            <div className={styles.revealRow}>
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                aria-pressed={revealed}
+                onClick={() =>
+                  setRevealState(
+                    revealed ? null : { fileName: fileName ?? '', routeKey: location.key }
+                  )
+                }
+              >
+                {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
+              </Button>
+            </div>
+          )}
           {editor.loading ? (
             <div className={styles.loading}>
               <LoadingSpinner size={14} />
@@ -173,7 +269,12 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
               {editor.error && <div className={styles.error}>{editor.error}</div>}
               <div className={styles.jsonWrapper}>
                 <label className={styles.label}>{t('auth_files.prefix_proxy_info_label')}</label>
-                <textarea className={styles.textarea} rows={8} readOnly value={displayInfoText} />
+                <textarea
+                  className={styles.textarea}
+                  rows={8}
+                  readOnly
+                  value={display(displayInfoText)}
+                />
               </div>
               <div className={styles.jsonWrapper}>
                 <label className={styles.label}>
@@ -182,9 +283,14 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
                     : t('auth_files.prefix_proxy_invalid_content_label')}
                 </label>
                 {editor.json ? (
-                  <textarea className={styles.textarea} rows={10} readOnly value={previewText} />
+                  <textarea
+                    className={styles.textarea}
+                    rows={10}
+                    readOnly
+                    value={display(previewText)}
+                  />
                 ) : (
-                  <pre className={styles.invalidPreview}>{invalidContentPreview}</pre>
+                  <pre className={styles.invalidPreview}>{display(invalidContentPreview)}</pre>
                 )}
               </div>
               {editor.json && (
