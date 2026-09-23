@@ -159,3 +159,50 @@ test('Vertex import hides malformed account fields and unresolved email-bearing 
     plugins.mockRestore();
   }
 });
+
+test('choosing another file during import leaves the new file ready to import', async () => {
+  let finishImport!: (value: { status: 'ok'; email: string }) => void;
+  const pending = new Promise<{ status: 'ok'; email: string }>((resolve) => {
+    finishImport = resolve;
+  });
+  const imported = spyOn(vertexApi, 'importCredential').mockImplementation(() => pending);
+  const plugins = spyOn(pluginsApi, 'list').mockResolvedValue({ plugins: [] });
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  try {
+    await act(async () =>
+      root.render(
+        createElement(
+          I18nextProvider,
+          { i18n },
+          createElement(MemoryRouter, null, createElement(OAuthPage))
+        )
+      )
+    );
+    const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+    const select = async (name: string) => {
+      const files = new window.DataTransfer();
+      files.items.add(new window.File(['{}'], name, { type: 'application/json' }));
+      input.files = files.files;
+      await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
+    };
+    const importButton = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Import Vertex Credential'
+    )!;
+    await select('first-alice@example.com.json');
+    await act(async () => importButton.click());
+    expect(importButton.disabled).toBe(true);
+    await select('second-bob@example.net.json');
+    expect(importButton.disabled).toBe(false);
+    await act(async () => finishImport({ status: 'ok', email: 'alice@example.com' }));
+    expect(host.innerHTML).not.toContain('alice@example.com');
+    expect(host.textContent).not.toContain('Credential saved');
+    expect(importButton.disabled).toBe(false);
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+    imported.mockRestore();
+    plugins.mockRestore();
+  }
+});

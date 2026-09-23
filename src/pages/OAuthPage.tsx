@@ -632,6 +632,7 @@ export function OAuthPage() {
       ...prev,
       file,
       fileName: file.name,
+      loading: false,
       error: undefined,
       result: undefined,
     }));
