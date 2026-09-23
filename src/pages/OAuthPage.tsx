@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,6 +11,7 @@ import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
 import { getErrorMessage, isRecord } from '@/utils/helpers';
 import { notifyAuthFilesChanged } from '@/features/authFiles/authFilesEvents';
+import { maskAccountEmail, presentAuthFileName } from '@/features/authFiles/presentation';
 import { getPluginTitle, resolvePluginAssetURL } from '@/features/plugins/pluginResources';
 import type { PluginListEntry } from '@/types';
 import { createOAuthAttempts, type OAuthAttempt } from './oauthAttempts';
@@ -267,6 +268,7 @@ const resolveCallbackUrl = (provider: string, input: string, state?: string): st
 export function OAuthPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const route = useLocation();
   const apiBase = useAuthStore((state) => state.apiBase);
   const { showNotification } = useNotificationStore();
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -277,6 +279,18 @@ export function OAuthPage() {
     location: '',
     loading: false,
   });
+  const [vertexReveal, setVertexReveal] = useState<{ file: File; routeKey: string } | null>(null);
+  const vertexImportGeneration = useRef(0);
+  const vertexRevealed = Boolean(
+    vertexState.file &&
+    vertexReveal?.file === vertexState.file &&
+    vertexReveal.routeKey === route.key
+  );
+  const vertexEmail = vertexState.result?.email ?? '';
+  const vertexRevealable = Boolean(
+    vertexEmail || vertexState.fileName.includes('@') || vertexState.result?.authFile?.includes('@')
+  );
+  const hiddenFileName = t('auth_files.hidden_auth_file_name');
   const attempts = useRef(
     createOAuthAttempts({
       setTimeout: (callback, delay) => window.setTimeout(callback, delay),
@@ -300,6 +314,9 @@ export function OAuthPage() {
       ) {
         clearTimers();
         setStates({});
+        vertexImportGeneration.current += 1;
+        setVertexReveal(null);
+        setVertexState({ fileName: '', location: '', loading: false });
       }
     });
     return () => {
@@ -610,6 +627,7 @@ export function OAuthPage() {
       event.target.value = '';
       return;
     }
+    vertexImportGeneration.current += 1;
     setVertexState((prev) => ({
       ...prev,
       file,
@@ -617,6 +635,7 @@ export function OAuthPage() {
       error: undefined,
       result: undefined,
     }));
+    setVertexReveal(null);
     event.target.value = '';
   };
 
@@ -628,12 +647,15 @@ export function OAuthPage() {
       return;
     }
     const location = vertexState.location.trim();
+    const generation = ++vertexImportGeneration.current;
+    setVertexReveal(null);
     setVertexState((prev) => ({ ...prev, loading: true, error: undefined, result: undefined }));
     try {
       const res: VertexImportResponse = await vertexApi.importCredential(
         vertexState.file,
         location || undefined
       );
+      if (generation !== vertexImportGeneration.current) return;
       const result: VertexImportResult = {
         projectId: res.project_id,
         email: res.email,
@@ -644,6 +666,7 @@ export function OAuthPage() {
       notifyAuthFilesChanged();
       showNotification(t('vertex_import.success'), 'success');
     } catch (err: unknown) {
+      if (generation !== vertexImportGeneration.current) return;
       const message = getErrorMessage(err);
       setVertexState((prev) => ({
         ...prev,
@@ -891,8 +914,32 @@ export function OAuthPage() {
                       vertexState.fileName ? '' : styles.fileNamePlaceholder
                     }`.trim()}
                   >
-                    {vertexState.fileName || t('vertex_import.file_placeholder')}
+                    {vertexState.fileName
+                      ? presentAuthFileName(
+                          vertexState.fileName,
+                          vertexEmail,
+                          vertexRevealed,
+                          hiddenFileName
+                        )
+                      : t('vertex_import.file_placeholder')}
                   </div>
+                  {vertexRevealable && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      aria-pressed={vertexRevealed}
+                      onClick={() =>
+                        setVertexReveal(
+                          vertexRevealed || !vertexState.file
+                            ? null
+                            : { file: vertexState.file, routeKey: route.key }
+                        )
+                      }
+                    >
+                      {t(vertexRevealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
+                    </Button>
+                  )}
                 </div>
                 <div className={styles.cardHintSecondary}>{t('vertex_import.file_hint')}</div>
                 <input
@@ -921,7 +968,12 @@ export function OAuthPage() {
                         <span className={styles.keyValueKey}>
                           {t('vertex_import.result_email')}
                         </span>
-                        <span className={styles.keyValueValue}>{vertexState.result.email}</span>
+                        <span className={styles.keyValueValue}>
+                          {vertexRevealed
+                            ? vertexState.result.email
+                            : (maskAccountEmail(vertexState.result.email) ??
+                              t('auth_files.hidden_email'))}
+                        </span>
                       </div>
                     )}
                     {vertexState.result.location && (
@@ -935,7 +987,14 @@ export function OAuthPage() {
                     {vertexState.result.authFile && (
                       <div className={styles.keyValueItem}>
                         <span className={styles.keyValueKey}>{t('vertex_import.result_file')}</span>
-                        <span className={styles.keyValueValue}>{vertexState.result.authFile}</span>
+                        <span className={styles.keyValueValue}>
+                          {presentAuthFileName(
+                            vertexState.result.authFile,
+                            vertexEmail,
+                            vertexRevealed,
+                            hiddenFileName
+                          )}
+                        </span>
                       </div>
                     )}
                   </div>
