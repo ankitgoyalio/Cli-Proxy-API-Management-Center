@@ -16,9 +16,11 @@ import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatRelativeInstant, TYPE_COLORS } from '@/utils/quota';
-import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { useNow } from '@/hooks/useNow';
 import type { ResolvedTheme, ThemeColors } from '@/types';
+import type { AuthFileItem } from '@/types';
+import { canRevealQuotaName, presentQuotaName } from '../presentation';
 import {
   buildTimelineLane,
   laneHasWindow,
@@ -54,6 +56,8 @@ export interface QuotaTimelineProps {
   quotaFor: (entry: QuotaFileEntry) => QuotaCardState | undefined;
   displayNameFor: (name: string) => string;
   resolvedTheme: ResolvedTheme;
+  revealedNames?: Set<string>;
+  onToggleReveal?: (key: string) => void;
   /** Injectable for tests/screenshots; defaults to the real clock. */
   now?: number;
   /** Injectable initial zoom for tests/screenshots; defaults to the weekly view. */
@@ -67,6 +71,8 @@ export function QuotaTimeline({
   quotaFor,
   displayNameFor,
   resolvedTheme,
+  revealedNames,
+  onToggleReveal,
   now: nowProp,
   initialMode = 'weekly',
   initialOffset = 0,
@@ -93,14 +99,21 @@ export function QuotaTimeline({
     () =>
       entries.map((entry) => ({
         name: getQuotaCacheKey(entry.file),
-        displayName:
-          entry.type === 'devin'
-            ? getQuotaDisplayName(entry.file)
-            : displayNameFor(entry.file.name),
+        displayName: displayNameFor(
+          presentQuotaName(
+            entry.file,
+            revealedNames?.has(getQuotaCacheKey(entry.file)) ?? false,
+            t('auth_files.hidden_auth_file_name')
+          )
+        ),
         provider: entry.type,
         quota: quotaFor(entry),
       })),
-    [entries, quotaFor, displayNameFor]
+    [entries, quotaFor, displayNameFor, revealedNames, t]
+  );
+  const filesByKey = useMemo(
+    () => new Map(entries.map((entry) => [getQuotaCacheKey(entry.file), entry.file])),
+    [entries]
   );
 
   // Keep the timeline hidden until at least one loaded credential exposes a
@@ -259,6 +272,9 @@ export function QuotaTimeline({
               <Lane
                 key={lane.name}
                 lane={lane}
+                file={filesByKey.get(lane.name)}
+                revealed={revealedNames?.has(lane.name) ?? false}
+                onToggleReveal={onToggleReveal ? () => onToggleReveal(lane.name) : undefined}
                 span={span}
                 now={now}
                 mode={mode}
@@ -310,6 +326,9 @@ export function QuotaTimeline({
 
 interface LaneProps {
   lane: TimelineLane;
+  file?: AuthFileItem;
+  revealed: boolean;
+  onToggleReveal?: () => void;
   span: { startMs: number; endMs: number; days: number };
   now: number;
   mode: TimelineMode;
@@ -318,8 +337,22 @@ interface LaneProps {
   resolvedTheme: ResolvedTheme;
 }
 
-function Lane({ lane, span, now, mode, cells, nowPercent, resolvedTheme }: LaneProps) {
+function Lane({
+  lane,
+  file,
+  revealed,
+  onToggleReveal,
+  span,
+  now,
+  mode,
+  cells,
+  nowPercent,
+  resolvedTheme,
+}: LaneProps) {
   const { t, i18n } = useTranslation();
+  const displayName = file
+    ? presentQuotaName(file, revealed, t('auth_files.hidden_auth_file_name'))
+    : lane.displayName;
 
   const windows = useMemo(
     () => projectLane(lane, span.startMs, span.endMs, now, mode),
@@ -349,16 +382,25 @@ function Lane({ lane, span, now, mode, cells, nowPercent, resolvedTheme }: LaneP
       <div className={styles.laneHead}>
         <div className={styles.laneTop}>
           <span className={styles.laneDot} />
-          <span className={styles.laneName} title={lane.displayName}>
-            {lane.displayName}
+          <span className={styles.laneName} title={displayName}>
+            {displayName}
           </span>
+          {file && canRevealQuotaName(file) && onToggleReveal && (
+            <button
+              type="button"
+              className={styles.revealButton}
+              aria-pressed={revealed}
+              onClick={onToggleReveal}
+            >
+              {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
+            </button>
+          )}
           {periodLabel && <span className={styles.lanePeriod}>{periodLabel}</span>}
         </div>
         <div className={styles.laneLimits}>
           {lane.limits.map((limit) => (
             <span key={limit.label} className={styles.laneLimit}>
-              {lane.provider === 'meta' ? t(limit.label) : limit.label}{' '}
-              <b>{limit.remaining}%</b>
+              {lane.provider === 'meta' ? t(limit.label) : limit.label} <b>{limit.remaining}%</b>
             </span>
           ))}
         </div>
@@ -400,7 +442,7 @@ function Lane({ lane, span, now, mode, cells, nowPercent, resolvedTheme }: LaneP
                 key={window.startMs}
                 className={`${styles.window} ${styles[`window${capitalize(window.state)}`]}`}
                 style={{ left: `${window.leftPercent}%`, width: `${window.widthPercent}%` }}
-                title={`${lane.displayName}\n${formatDay(window.startMs)} ${formatTime(
+                title={`${displayName}\n${formatDay(window.startMs)} ${formatTime(
                   window.startMs
                 )} → ${formatDay(window.endMs)} ${formatTime(window.endMs)}${
                   window.remaining !== null ? `\n${window.remaining}% remaining` : ''

@@ -14,6 +14,8 @@ import {
 import type { AuthFileItem } from '@/types';
 import { getStatusFromError } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
+import { presentAuthFileName } from '@/features/authFiles/presentation';
+import { presentQuotaFileName } from '../presentation';
 import { getQuotaMap, getQuotaSetter, type QuotaAdapter, type QuotaCardState } from '../providers';
 
 const getQuotaState = (adapter: QuotaAdapter, file: AuthFileItem): QuotaCardState | undefined =>
@@ -29,6 +31,7 @@ export function useQuotaActions(disableControls: boolean) {
     async (file: AuthFileItem, adapter: QuotaAdapter) => {
       if (disableControls || file.disabled) return;
       const cacheKey = getQuotaCacheKey(file);
+      const safeName = presentQuotaFileName(file, t('auth_files.hidden_auth_file_name'));
       if (resettingQuotaName === cacheKey) return;
       if (getQuotaState(adapter, file)?.status === 'loading') return;
       const cacheGeneration = captureQuotaCacheGeneration(file.name);
@@ -46,7 +49,7 @@ export function useQuotaActions(disableControls: boolean) {
             ...prev,
             [cacheKey]: adapter.buildSuccessState(data),
           }));
-          showNotification(t('auth_files.quota_refresh_success', { name: file.name }), 'success');
+          showNotification(t('auth_files.quota_refresh_success', { name: safeName }), 'success');
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : t('common.unknown_error');
@@ -57,7 +60,15 @@ export function useQuotaActions(disableControls: boolean) {
             [cacheKey]: adapter.buildErrorState(message, status),
           }));
           showNotification(
-            t('auth_files.quota_refresh_failed', { name: file.name, message }),
+            t('auth_files.quota_refresh_failed', {
+              name: safeName,
+              message: presentAuthFileName(
+                message,
+                file.email ?? '',
+                false,
+                t('auth_files.hidden_auth_file_name')
+              ),
+            }),
             'error'
           );
         });
@@ -72,12 +83,13 @@ export function useQuotaActions(disableControls: boolean) {
       if (!resetQuotaFn) return;
       if (disableControls || file.disabled) return;
       const cacheKey = getQuotaCacheKey(file);
+      const safeName = presentQuotaFileName(file, t('auth_files.hidden_auth_file_name'));
       if (getQuotaState(adapter, file)?.status === 'loading') return;
       if (resettingQuotaName === cacheKey) return;
 
       showConfirmation({
         title: t('codex_quota.reset_confirm_title'),
-        message: t('codex_quota.reset_confirm_message', { name: file.name }),
+        message: t('codex_quota.reset_confirm_message', { name: safeName }),
         confirmText: t('codex_quota.reset_confirm_button'),
         variant: 'primary',
         onConfirm: async () => {
@@ -91,13 +103,21 @@ export function useQuotaActions(disableControls: boolean) {
                 ...prev,
                 [cacheKey]: adapter.buildSuccessState(data),
               }));
-              showNotification(t('codex_quota.reset_success', { name: file.name }), 'success');
+              showNotification(t('codex_quota.reset_success', { name: safeName }), 'success');
             });
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : t('common.unknown_error');
             commitIfQuotaCacheCurrent(cacheGeneration, () => {
               showNotification(
-                t('codex_quota.reset_failed', { name: file.name, message }),
+                t('codex_quota.reset_failed', {
+                  name: safeName,
+                  message: presentAuthFileName(
+                    message,
+                    file.email ?? '',
+                    false,
+                    t('auth_files.hidden_auth_file_name')
+                  ),
+                }),
                 'error'
               );
             });

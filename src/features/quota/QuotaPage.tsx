@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { authFilesApi } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -64,6 +65,24 @@ const displayNameFor = (name: string) => name;
 
 export function QuotaPage() {
   const { t } = useTranslation();
+  const location = useLocation();
+  const [revealState, setRevealState] = useState<{ routeKey: string; names: Set<string> }>(() => ({
+    routeKey: location.key,
+    names: new Set(),
+  }));
+  const revealedNames =
+    revealState.routeKey === location.key ? revealState.names : new Set<string>();
+  const toggleReveal = useCallback(
+    (key: string) => {
+      setRevealState((current) => {
+        const names = new Set(current.routeKey === location.key ? current.names : []);
+        if (names.has(key)) names.delete(key);
+        else names.add(key);
+        return { routeKey: location.key, names };
+      });
+    },
+    [location.key]
+  );
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
 
@@ -167,10 +186,14 @@ export function QuotaPage() {
     () => filterEntriesBySearch(filterEntriesByTab(entries, tab), search),
     [entries, tab, search]
   );
-  const handleSearchChange = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearch(value);
+      setPage(1);
+      setRevealState({ routeKey: location.key, names: new Set() });
+    },
+    [location.key]
+  );
 
   const resolveNextRecovery = useCallback(
     (entry: QuotaFileEntry) => nextRecoveryMs(entry.type, getQuota(entry), sortNow),
@@ -187,17 +210,25 @@ export function QuotaPage() {
     [sortedEntries, page]
   );
 
-  const handleTabChange = useCallback((next: string) => {
-    setTab(next as QuotaTabId);
-    setPage(1);
-    writeQuotaUiState({ tab: next as QuotaTabId });
-  }, []);
+  const handleTabChange = useCallback(
+    (next: string) => {
+      setTab(next as QuotaTabId);
+      setPage(1);
+      setRevealState({ routeKey: location.key, names: new Set() });
+      writeQuotaUiState({ tab: next as QuotaTabId });
+    },
+    [location.key]
+  );
 
-  const handleSortModeChange = useCallback((next: string) => {
-    setSortMode(next as QuotaSortMode);
-    setPage(1);
-    writeQuotaUiState({ sortMode: next as QuotaSortMode });
-  }, []);
+  const handleSortModeChange = useCallback(
+    (next: string) => {
+      setSortMode(next as QuotaSortMode);
+      setPage(1);
+      setRevealState({ routeKey: location.key, names: new Set() });
+      writeQuotaUiState({ sortMode: next as QuotaSortMode });
+    },
+    [location.key]
+  );
 
   const sortOptions = useMemo(
     () =>
@@ -426,6 +457,8 @@ export function QuotaPage() {
                 entranceDelayMs={cardEntranceDelay(index)}
                 onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
                 onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+                revealed={revealedNames.has(getQuotaCacheKey(entry.file))}
+                onToggleReveal={() => toggleReveal(getQuotaCacheKey(entry.file))}
               />
             ))}
           </div>
@@ -436,7 +469,10 @@ export function QuotaPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              onClick={() => {
+                setPage(Math.max(1, currentPage - 1));
+                setRevealState({ routeKey: location.key, names: new Set() });
+              }}
               disabled={currentPage <= 1}
             >
               {t('auth_files.pagination_prev')}
@@ -451,7 +487,10 @@ export function QuotaPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              onClick={() => {
+                setPage(Math.min(totalPages, currentPage + 1));
+                setRevealState({ routeKey: location.key, names: new Set() });
+              }}
               disabled={currentPage >= totalPages}
             >
               {t('auth_files.pagination_next')}
@@ -465,6 +504,8 @@ export function QuotaPage() {
           quotaFor={getQuota}
           displayNameFor={displayNameFor}
           resolvedTheme={resolvedTheme}
+          revealedNames={revealedNames}
+          onToggleReveal={toggleReveal}
         />
       </section>
     </div>
