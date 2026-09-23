@@ -1,5 +1,6 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { SelectionCheckbox } from '@/components/ui/SelectionCheckbox';
@@ -60,6 +61,7 @@ export type AuthFileCardProps = {
 
 export function AuthFileCard(props: AuthFileCardProps) {
   const { t } = useTranslation();
+  const isCurrentLayer = usePageTransitionLayer()?.isCurrentLayer ?? true;
   const {
     file,
     compact,
@@ -108,7 +110,11 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const weightValue = Number.isSafeInteger(file.weight) ? file.weight : undefined;
   const noteValue = typeof file.note === 'string' ? file.note.trim() : '';
   // 主行显示账号（email/项目 ID），文件名降为满卡宽的 mono 副行
-  const [revealed, setRevealed] = useState(false);
+  const [revealState, setRevealState] = useState(false);
+  const revealed = isCurrentLayer && revealState;
+  useEffect(() => {
+    if (!isCurrentLayer) setRevealState(false);
+  }, [isCurrentLayer]);
   const identity = presentAuthFile(
     file,
     revealed,
@@ -172,7 +178,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
             size="sm"
             type="button"
             aria-pressed={revealed}
-            onClick={() => setRevealed((value) => !value)}
+            onClick={() => setRevealState((value) => !value)}
           >
             {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
           </Button>

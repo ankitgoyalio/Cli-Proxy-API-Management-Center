@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -269,6 +270,7 @@ export function OAuthPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const route = useLocation();
+  const isCurrentLayer = usePageTransitionLayer()?.isCurrentLayer ?? true;
   const apiBase = useAuthStore((state) => state.apiBase);
   const { showNotification } = useNotificationStore();
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -282,6 +284,7 @@ export function OAuthPage() {
   const [vertexReveal, setVertexReveal] = useState<{ file: File; routeKey: string } | null>(null);
   const vertexImportGeneration = useRef(0);
   const vertexRevealed = Boolean(
+    isCurrentLayer &&
     vertexState.file &&
     vertexReveal?.file === vertexState.file &&
     vertexReveal.routeKey === route.key
@@ -302,6 +305,10 @@ export function OAuthPage() {
   const clearTimers = useCallback(() => {
     attempts.current.invalidateAll();
   }, []);
+
+  useEffect(() => {
+    if (!isCurrentLayer) setVertexReveal(null);
+  }, [isCurrentLayer]);
 
   useEffect(() => {
     // Invalidate synchronously on connection changes, including a new key on
