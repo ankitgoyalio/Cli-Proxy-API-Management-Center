@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { IconRefreshCw } from '@/components/ui/icons';
 import type { ResolvedTheme } from '@/types';
 import { resolveQuotaErrorMessage } from '@/utils/quota';
-import { getQuotaDisplayName } from '@/utils/quota/identity';
 import {
   getAuthFileIcon,
   getThemeSurfaceIconBackground,
@@ -22,6 +21,8 @@ import {
 import { bindQuotaClasses } from '../types';
 import { QUOTA_ADAPTERS, type QuotaCardState } from '../providers';
 import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
+import { canRevealQuotaName, presentQuotaName } from '../presentation';
+import { presentAuthFileName } from '@/features/authFiles/presentation';
 import bodyStyles from './QuotaBody.module.scss';
 import styles from './QuotaCard.module.scss';
 
@@ -38,6 +39,8 @@ export type QuotaCardProps = {
   entranceDelayMs?: number | null;
   onRefresh: () => void;
   onReset: () => void;
+  revealed: boolean;
+  onToggleReveal: () => void;
 };
 
 export function QuotaCard(props: QuotaCardProps) {
@@ -50,11 +53,13 @@ export function QuotaCard(props: QuotaCardProps) {
     entranceDelayMs,
     onRefresh,
     onReset,
+    revealed,
+    onToggleReveal,
   } = props;
   const { t } = useTranslation();
   const adapter = QUOTA_ADAPTERS[entry.type];
   const file = entry.file;
-  const displayName = getQuotaDisplayName(file);
+  const displayName = presentQuotaName(file, revealed, t('auth_files.hidden_auth_file_name'));
 
   // 挂载时捕获一次延迟：后续 props 变 null 不影响本卡（React 19 禁渲染期读 ref）
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
@@ -67,10 +72,16 @@ export function QuotaCard(props: QuotaCardProps) {
   const loading = status === 'loading';
   const iconSrc = getAuthFileIcon(entry.type, resolvedTheme);
   const typeLabel = getTypeLabel(t, entry.type);
-  const errorMessage = resolveQuotaErrorMessage(
+  const rawErrorMessage = resolveQuotaErrorMessage(
     t,
     quota?.errorStatus,
     quota?.error || t('common.unknown_error')
+  );
+  const errorMessage = presentAuthFileName(
+    rawErrorMessage,
+    file.email ?? '',
+    false,
+    t('auth_files.hidden_auth_file_name')
   );
   const showReset =
     status === 'success' &&
@@ -102,6 +113,16 @@ export function QuotaCard(props: QuotaCardProps) {
         <span className={styles.fileName} title={displayName}>
           {displayName}
         </span>
+        {canRevealQuotaName(file) && (
+          <button
+            type="button"
+            className={styles.revealButton}
+            aria-pressed={revealed}
+            onClick={onToggleReveal}
+          >
+            {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
+          </button>
+        )}
       </header>
 
       <div className={styles.body}>

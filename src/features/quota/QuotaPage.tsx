@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router-dom';
 import { authFilesApi } from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -50,6 +51,7 @@ import type { QuotaProviderType } from './providers/types';
 import { useDevinQuotaAutoLoad } from './providers/devin/useDevinQuotaAutoLoad';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
+import { useQuotaReveal } from './hooks/useQuotaReveal';
 import { readQuotaUiState, writeQuotaUiState } from './uiState';
 import styles from './QuotaPage.module.scss';
 
@@ -64,7 +66,14 @@ const displayNameFor = (name: string) => name;
 
 export function QuotaPage() {
   const { t } = useTranslation();
+  const location = useLocation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
+  const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
+  const { revealedNames, toggleReveal, clearReveals } = useQuotaReveal(
+    location.key,
+    sessionGeneration,
+    connectionStatus
+  );
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
 
   const [files, setFiles] = useState<AuthFileItem[]>([]);
@@ -84,7 +93,6 @@ export function QuotaPage() {
 
   /* ---------- 文件列表 ---------- */
 
-  const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
   const [filesGeneration, setFilesGeneration] = useState<number | null>(null);
   const listRequestRef = useRef(0);
   const loadFiles = useCallback(async () => {
@@ -167,10 +175,14 @@ export function QuotaPage() {
     () => filterEntriesBySearch(filterEntriesByTab(entries, tab), search),
     [entries, tab, search]
   );
-  const handleSearchChange = useCallback((value: string) => {
-    setSearch(value);
-    setPage(1);
-  }, []);
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearch(value);
+      setPage(1);
+      clearReveals();
+    },
+    [clearReveals]
+  );
 
   const resolveNextRecovery = useCallback(
     (entry: QuotaFileEntry) => nextRecoveryMs(entry.type, getQuota(entry), sortNow),
@@ -187,17 +199,25 @@ export function QuotaPage() {
     [sortedEntries, page]
   );
 
-  const handleTabChange = useCallback((next: string) => {
-    setTab(next as QuotaTabId);
-    setPage(1);
-    writeQuotaUiState({ tab: next as QuotaTabId });
-  }, []);
+  const handleTabChange = useCallback(
+    (next: string) => {
+      setTab(next as QuotaTabId);
+      setPage(1);
+      clearReveals();
+      writeQuotaUiState({ tab: next as QuotaTabId });
+    },
+    [clearReveals]
+  );
 
-  const handleSortModeChange = useCallback((next: string) => {
-    setSortMode(next as QuotaSortMode);
-    setPage(1);
-    writeQuotaUiState({ sortMode: next as QuotaSortMode });
-  }, []);
+  const handleSortModeChange = useCallback(
+    (next: string) => {
+      setSortMode(next as QuotaSortMode);
+      setPage(1);
+      clearReveals();
+      writeQuotaUiState({ sortMode: next as QuotaSortMode });
+    },
+    [clearReveals]
+  );
 
   const sortOptions = useMemo(
     () =>
@@ -426,6 +446,8 @@ export function QuotaPage() {
                 entranceDelayMs={cardEntranceDelay(index)}
                 onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
                 onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+                revealed={revealedNames.has(getQuotaCacheKey(entry.file))}
+                onToggleReveal={() => toggleReveal(getQuotaCacheKey(entry.file))}
               />
             ))}
           </div>
@@ -436,7 +458,10 @@ export function QuotaPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setPage(Math.max(1, currentPage - 1))}
+              onClick={() => {
+                setPage(Math.max(1, currentPage - 1));
+                clearReveals();
+              }}
               disabled={currentPage <= 1}
             >
               {t('auth_files.pagination_prev')}
@@ -451,7 +476,10 @@ export function QuotaPage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setPage(Math.min(totalPages, currentPage + 1))}
+              onClick={() => {
+                setPage(Math.min(totalPages, currentPage + 1));
+                clearReveals();
+              }}
               disabled={currentPage >= totalPages}
             >
               {t('auth_files.pagination_next')}
@@ -465,6 +493,8 @@ export function QuotaPage() {
           quotaFor={getQuota}
           displayNameFor={displayNameFor}
           resolvedTheme={resolvedTheme}
+          revealedNames={revealedNames}
+          onToggleReveal={toggleReveal}
         />
       </section>
     </div>

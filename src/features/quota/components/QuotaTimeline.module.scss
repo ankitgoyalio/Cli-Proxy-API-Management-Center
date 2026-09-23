@@ -194,6 +194,19 @@ $lane-width: 210px;
   white-space: nowrap;
 }
 
+.revealButton {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
 .lanePeriod {
   flex: none;
   padding: 0 6px;

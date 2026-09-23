@@ -21,6 +21,82 @@ const baseProps = {
 };
 
 describe('QuotaTimeline rendering', () => {
+  test('masks Account emails and filenames in lane text, titles, and hover details', () => {
+    const privateEntries: QuotaFileEntry[] = [
+      {
+        file: { name: 'codex-alice@example.com.json', email: 'alice@example.com', type: 'codex' },
+        type: 'codex',
+      },
+      {
+        file: { name: 'devin-profile.json', email: 'bob@example.com', type: 'devin' },
+        type: 'devin',
+      },
+    ];
+    const quota = {
+      status: 'success' as const,
+      windows: [
+        {
+          label: '7-day',
+          usedPercent: 25,
+          resetAtMs: new Date(2026, 7, 1, 12).getTime(),
+          periodHours: 168,
+        },
+      ],
+    };
+    const markup = renderToStaticMarkup(
+      createElement(QuotaTimeline, {
+        ...baseProps,
+        entries: privateEntries,
+        quotaFor: (entry) =>
+          entry.type === 'devin'
+            ? {
+                status: 'success',
+                windows: [
+                  {
+                    id: 'weekly',
+                    remainingPercent: 75,
+                    resetAtMs: new Date(2026, 7, 1, 12).getTime(),
+                    periodHours: 168,
+                  },
+                ],
+              }
+            : quota,
+        onToggleReveal: () => {},
+      })
+    );
+
+    expect(markup).not.toContain('alice@example.com');
+    expect(markup).not.toContain('bob@example.com');
+    expect(markup).toContain('a***@e***.com');
+    expect(markup).toContain('b***@e***.com');
+    expect(markup.match(/aria-pressed="false"/g)?.length).toBe(3);
+
+    const revealed = renderToStaticMarkup(
+      createElement(QuotaTimeline, {
+        ...baseProps,
+        entries: privateEntries,
+        quotaFor: (entry) =>
+          entry.type === 'devin'
+            ? {
+                status: 'success',
+                windows: [
+                  {
+                    id: 'weekly',
+                    remainingPercent: 75,
+                    resetAtMs: new Date(2026, 7, 1, 12).getTime(),
+                    periodHours: 168,
+                  },
+                ],
+              }
+            : quota,
+        onToggleReveal: () => {},
+        revealedNames: new Set(['codex-alice@example.com.json']),
+      })
+    );
+    expect(revealed).toContain('alice@example.com');
+    expect(revealed).not.toContain('bob@example.com');
+  });
+
   test('shows the selected period date instead of always labelling it Today', () => {
     const markup = renderToStaticMarkup(
       createElement(QuotaTimeline, {
