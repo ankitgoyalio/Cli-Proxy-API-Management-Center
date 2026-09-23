@@ -32,44 +32,62 @@ test('quota reveals are independent and reset on route, connection, or session c
     routeKey,
     generation,
     connection,
+    currentLayer,
   }: {
     routeKey: string;
     generation: number;
     connection: ConnectionStatus;
+    currentLayer: boolean;
   }) {
-    reveal = useQuotaReveal(routeKey, generation, connection);
+    reveal = useQuotaReveal(routeKey, generation, connection, currentLayer);
     return createElement(
       'div',
       null,
       createElement(
         'span',
         null,
-        reveal.revealedNames.has('first') ? 'first visible' : 'first masked'
+        reveal.cardRevealedNames.has('first') ? 'card visible' : 'card masked'
       ),
       createElement(
         'span',
         null,
-        reveal.revealedNames.has('second') ? 'second visible' : 'second masked'
+        reveal.timelineRevealedNames.has('first') ? 'timeline visible' : 'timeline masked'
       )
     );
   }
-  const render = async (routeKey: string, generation: number, connection: ConnectionStatus) =>
-    act(async () => root.render(createElement(Harness, { routeKey, generation, connection })));
+  const render = async (
+    routeKey: string,
+    generation: number,
+    connection: ConnectionStatus,
+    currentLayer = true
+  ) =>
+    act(async () =>
+      root.render(createElement(Harness, { routeKey, generation, connection, currentLayer }))
+    );
 
   await render('route-a', 1, 'connected');
-  await act(async () => reveal.toggleReveal('first'));
-  expect(host.textContent).toContain('first visible');
-  expect(host.textContent).toContain('second masked');
+  await act(async () => reveal.toggleCardReveal('first'));
+  expect(host.textContent).toContain('card visible');
+  expect(host.textContent).toContain('timeline masked');
+  await act(async () => reveal.toggleTimelineReveal('first'));
+  expect(host.textContent).toContain('card visible');
+  expect(host.textContent).toContain('timeline visible');
   await render('route-b', 1, 'connected');
-  expect(host.textContent).toContain('first masked');
-  await act(async () => reveal.toggleReveal('first'));
+  expect(host.textContent).toContain('card masked');
+  expect(host.textContent).toContain('timeline masked');
+  await act(async () => reveal.toggleCardReveal('first'));
   await render('route-b', 2, 'connected');
-  expect(host.textContent).toContain('first masked');
-  await act(async () => reveal.toggleReveal('first'));
+  expect(host.textContent).toContain('card masked');
+  await act(async () => reveal.toggleCardReveal('first'));
+  await render('route-b', 2, 'connected', false);
+  expect(host.textContent).toContain('card masked');
+  await render('route-b', 2, 'connected');
+  expect(host.textContent).toContain('card masked');
+  await act(async () => reveal.toggleCardReveal('first'));
   await render('route-b', 2, 'disconnected');
-  expect(host.textContent).toContain('first masked');
+  expect(host.textContent).toContain('card masked');
   await render('route-b', 2, 'connected');
-  expect(host.textContent).toContain('first masked');
+  expect(host.textContent).toContain('card masked');
   await act(async () => root.unmount());
   host.remove();
 });

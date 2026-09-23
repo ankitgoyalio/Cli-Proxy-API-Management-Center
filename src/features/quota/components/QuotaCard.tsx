@@ -10,6 +10,7 @@
 import { useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconRefreshCw } from '@/components/ui/icons';
+import { Button } from '@/components/ui/Button';
 import type { ResolvedTheme } from '@/types';
 import { resolveQuotaErrorMessage } from '@/utils/quota';
 import {
@@ -59,7 +60,12 @@ export function QuotaCard(props: QuotaCardProps) {
   const { t } = useTranslation();
   const adapter = QUOTA_ADAPTERS[entry.type];
   const file = entry.file;
-  const displayName = presentQuotaName(file, revealed, t('auth_files.hidden_auth_file_name'));
+  const displayName = presentQuotaName(
+    file,
+    revealed,
+    t('auth_files.hidden_auth_file_name'),
+    t('auth_files.hidden_email')
+  );
 
   // 挂载时捕获一次延迟：后续 props 变 null 不影响本卡（React 19 禁渲染期读 ref）
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
@@ -114,14 +120,16 @@ export function QuotaCard(props: QuotaCardProps) {
           {displayName}
         </span>
         {canRevealQuotaName(file) && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
             className={styles.revealButton}
             aria-pressed={revealed}
             onClick={onToggleReveal}
           >
             {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
-          </button>
+          </Button>
         )}
       </header>
 

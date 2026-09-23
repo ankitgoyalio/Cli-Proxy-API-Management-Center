@@ -1,7 +1,7 @@
 import { afterAll, expect, spyOn, test } from 'bun:test';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createElement } from 'react';
+import { createElement, useState } from 'react';
 import { Window } from 'happy-dom';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
@@ -10,6 +10,7 @@ import { OAuthPage } from '../src/pages/OAuthPage';
 import { vertexApi } from '../src/services/api/vertex';
 import { pluginsApi } from '../src/services/api/plugins';
 import en from '../src/i18n/locales/en.json';
+import { PageTransitionLayerContext } from '../src/components/common/PageTransitionLayer';
 
 const window = new Window({ url: 'http://localhost/#/oauth' });
 const globalNames = [
@@ -156,6 +157,65 @@ test('Vertex import hides malformed account fields and unresolved email-bearing 
     await act(async () => root.unmount());
     host.remove();
     imported.mockRestore();
+    plugins.mockRestore();
+  }
+});
+
+test('Vertex reveal resets when its page becomes a stacked navigation layer', async () => {
+  const plugins = spyOn(pluginsApi, 'list').mockResolvedValue({ plugins: [] });
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  function LayerHarness() {
+    const [current, setCurrent] = useState(true);
+    return createElement(
+      MemoryRouter,
+      null,
+      createElement('button', { onClick: () => setCurrent(false) }, 'Leave layer'),
+      createElement('button', { onClick: () => setCurrent(true) }, 'Return layer'),
+      createElement(
+        PageTransitionLayerContext.Provider,
+        {
+          value: current
+            ? { status: 'current', isCurrentLayer: true, isAnimating: false }
+            : { status: 'stacked', isCurrentLayer: false, isAnimating: false },
+        },
+        createElement(OAuthPage)
+      )
+    );
+  }
+  try {
+    await act(async () =>
+      root.render(createElement(I18nextProvider, { i18n }, createElement(LayerHarness)))
+    );
+    const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+    const files = new window.DataTransfer();
+    files.items.add(
+      new window.File(['{}'], 'key-alice@example.com.json', { type: 'application/json' })
+    );
+    input.files = files.files;
+    await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
+    const reveal = Array.from(host.querySelectorAll('button')).find(
+      (button) => button.textContent === 'Show email'
+    )!;
+    await act(async () => reveal.click());
+    expect(host.innerHTML).toContain('alice@example.com');
+    await act(async () =>
+      Array.from(host.querySelectorAll('button'))
+        .find((button) => button.textContent === 'Leave layer')!
+        .click()
+    );
+    expect(host.innerHTML).not.toContain('alice@example.com');
+    await act(async () =>
+      Array.from(host.querySelectorAll('button'))
+        .find((button) => button.textContent === 'Return layer')!
+        .click()
+    );
+    expect(host.innerHTML).toContain('Hidden auth-file name');
+    expect(host.innerHTML).not.toContain('alice@example.com');
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
     plugins.mockRestore();
   }
 });

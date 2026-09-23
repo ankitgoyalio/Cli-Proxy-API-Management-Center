@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
 import { useLocation } from 'react-router-dom';
 import { authFilesApi } from '@/services/api';
 import { Button } from '@/components/ui/Button';
@@ -66,14 +67,17 @@ const displayNameFor = (name: string) => name;
 
 export function QuotaPage() {
   const { t } = useTranslation();
+  const isCurrentLayer = usePageTransitionLayer()?.isCurrentLayer ?? true;
   const location = useLocation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
-  const { revealedNames, toggleReveal, clearReveals } = useQuotaReveal(
-    location.key,
-    sessionGeneration,
-    connectionStatus
-  );
+  const {
+    cardRevealedNames,
+    timelineRevealedNames,
+    toggleCardReveal,
+    toggleTimelineReveal,
+    clearReveals,
+  } = useQuotaReveal(location.key, sessionGeneration, connectionStatus, isCurrentLayer);
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
 
   const [files, setFiles] = useState<AuthFileItem[]>([]);
@@ -446,8 +450,8 @@ export function QuotaPage() {
                 entranceDelayMs={cardEntranceDelay(index)}
                 onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
                 onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
-                revealed={revealedNames.has(getQuotaCacheKey(entry.file))}
-                onToggleReveal={() => toggleReveal(getQuotaCacheKey(entry.file))}
+                revealed={cardRevealedNames.has(getQuotaCacheKey(entry.file))}
+                onToggleReveal={() => toggleCardReveal(getQuotaCacheKey(entry.file))}
               />
             ))}
           </div>
@@ -493,8 +497,8 @@ export function QuotaPage() {
           quotaFor={getQuota}
           displayNameFor={displayNameFor}
           resolvedTheme={resolvedTheme}
-          revealedNames={revealedNames}
-          onToggleReveal={toggleReveal}
+          revealedNames={timelineRevealedNames}
+          onToggleReveal={toggleTimelineReveal}
         />
       </section>
     </div>

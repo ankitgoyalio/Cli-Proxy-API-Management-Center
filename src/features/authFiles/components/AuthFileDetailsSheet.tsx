@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
+import { usePageTransitionLayer } from '@/components/common/PageTransitionLayer';
 import { Sheet } from '@/components/ui/Sheet';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -37,6 +38,10 @@ const DERIVED_INFO_KEYS = [
 const readEmail = (value: unknown): string =>
   typeof value === 'string' && maskAccountEmail(value) ? value.trim() : '';
 const emailInTextPattern = /[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)*\.[A-Z]{2,}/gi;
+const emailFieldPattern = /("email"\s*:\s*)"((?:\\.|[^"\\])*)"/gi;
+
+const hasNonemptyEmailField = (text: string): boolean =>
+  [...text.matchAll(emailFieldPattern)].some((match) => match[2].trim().length > 0);
 
 const emailsFromJson = (text: string): string[] => {
   try {
@@ -66,9 +71,12 @@ function displayCredentialText(
   text: string,
   fileName: string,
   emails: string[],
-  hiddenName: string
+  hiddenName: string,
+  hiddenEmail: string
 ): string {
-  let displayed = text;
+  let displayed = text.replace(emailFieldPattern, (field, prefix: string, value: string) =>
+    value.trim() && !maskAccountEmail(value) ? `${prefix}${JSON.stringify(hiddenEmail)}` : field
+  );
   if (fileName) {
     const filenameEmail = emails.find((email) => fileName.includes(email)) ?? '';
     const safeName = presentAuthFileName(fileName, filenameEmail, false, hiddenName);
@@ -97,6 +105,7 @@ export type AuthFileDetailsSheetProps = {
  */
 export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
   const { t } = useTranslation();
+  const isCurrentLayer = usePageTransitionLayer()?.isCurrentLayer ?? true;
   const navigate = useNavigate();
   const location = useLocation();
   const { disableControls, editor, updatedText, dirty, onClose, onCopyText, onSave, onChange } =
@@ -108,8 +117,14 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
   const fileName = editor?.fileName;
   const isOpen = Boolean(editor);
   const revealed =
-    isOpen && revealState?.fileName === fileName && revealState?.routeKey === location.key;
+    isCurrentLayer &&
+    isOpen &&
+    revealState?.fileName === fileName &&
+    revealState?.routeKey === location.key;
   useEffect(() => setRevealState(null), [fileName, isOpen, location.key]);
+  useEffect(() => {
+    if (!isCurrentLayer) setRevealState(null);
+  }, [isCurrentLayer]);
 
   const confirmClose = useCallback((): boolean | Promise<boolean> => {
     if (!dirty || editor?.saving === true) return true;
@@ -186,12 +201,20 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
   }, [fileInfoText]);
 
   const display = (text: string) =>
-    revealed ? text : displayCredentialText(text, editor?.fileName ?? '', emails, hiddenName);
+    revealed
+      ? text
+      : displayCredentialText(
+          text,
+          editor?.fileName ?? '',
+          emails,
+          hiddenName,
+          t('auth_files.hidden_email')
+        );
   const showReveal = Boolean(
     emails.length ||
     editor?.fileName.includes('@') ||
-    [fileInfoText, updatedText, invalidContentPreview].some((text) =>
-      new RegExp(emailInTextPattern.source, 'i').test(text)
+    [fileInfoText, updatedText, invalidContentPreview].some(
+      (text) => hasNonemptyEmailField(text) || new RegExp(emailInTextPattern.source, 'i').test(text)
     )
   );
 

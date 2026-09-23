@@ -8,6 +8,7 @@ import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import type { PrefixProxyEditorState } from '../src/features/authFiles/hooks/useAuthFilesPrefixProxyEditor';
 import en from '../src/i18n/locales/en.json';
+import { PageTransitionLayerContext } from '../src/components/common/PageTransitionLayer';
 
 const window = new Window({ url: 'http://localhost/#/auth-files' });
 const globalNames = [
@@ -97,7 +98,7 @@ test('details sheet masks both previews, reveals locally, and copies original so
     note: 'contact carol@example.org',
   };
   const original = JSON.stringify(json);
-  const render = async (editor: PrefixProxyEditorState | null) => {
+  const render = async (editor: PrefixProxyEditorState | null, currentLayer = true) => {
     await act(async () => {
       root.render(
         createElement(
@@ -107,18 +108,26 @@ test('details sheet masks both previews, reveals locally, and copies original so
             I18nextProvider,
             { i18n },
             createElement(NavigateButton),
-            createElement(AuthFileDetailsSheet, {
-              editor,
-              updatedText: editor?.json ? original : '',
-              dirty: false,
-              disableControls: false,
-              onClose: () => {},
-              onCopyText: (text) => {
-                copied.push(text);
+            createElement(
+              PageTransitionLayerContext.Provider,
+              {
+                value: currentLayer
+                  ? { status: 'current', isCurrentLayer: true, isAnimating: false }
+                  : { status: 'stacked', isCurrentLayer: false, isAnimating: false },
               },
-              onSave: () => {},
-              onChange: () => {},
-            })
+              createElement(AuthFileDetailsSheet, {
+                editor,
+                updatedText: editor?.json ? original : '',
+                dirty: false,
+                disableControls: false,
+                onClose: () => {},
+                onCopyText: (text) => {
+                  copied.push(text);
+                },
+                onSave: () => {},
+                onChange: () => {},
+              })
+            )
           )
         )
       );
@@ -134,6 +143,7 @@ test('details sheet masks both previews, reveals locally, and copies original so
   expect(visible()).not.toContain('bob@example.net');
   expect(visible()).not.toContain('carol@example.org');
   expect(visible()).toContain('codex-abc-a***@e***.com-team.json');
+  expect(visible()).toContain('"email": "a***@e***.com"');
   const reveal = Array.from(document.querySelectorAll('button')).find((button) =>
     button.textContent?.includes('Show email')
   );
@@ -146,6 +156,10 @@ test('details sheet masks both previews, reveals locally, and copies original so
   );
   await act(async () => copy!.click());
   expect(copied).toEqual([original]);
+  await render(makeEditor(json), false);
+  expect(visible()).not.toContain('alice@example.com');
+  await render(makeEditor(json));
+  expect(visible()).not.toContain('alice@example.com');
   const changeRoute = Array.from(document.querySelectorAll('button')).find(
     (button) => button.textContent === 'Change route'
   );
@@ -167,6 +181,19 @@ test('details sheet masks both previews, reveals locally, and copies original so
   await render(ambiguous);
   expect(visible()).toContain('Hidden auth-file name');
   expect(visible()).not.toContain('alice@example.com');
+  const malformed = makeEditor({ email: 'broken-address' });
+  malformed.fileName = 'credential.json';
+  malformed.fileInfoText = JSON.stringify({ name: malformed.fileName, email: 'broken-address' });
+  malformed.invalidContentPreview = '';
+  await render(malformed);
+  expect(visible()).toContain('Hidden email');
+  expect(visible()).not.toContain('broken-address');
+  const malformedReveal = Array.from(document.querySelectorAll('button')).find((button) =>
+    button.textContent?.includes('Show email')
+  );
+  expect(malformedReveal).toBeDefined();
+  await act(async () => malformedReveal!.click());
+  expect(visible()).toContain('broken-address');
   await act(async () => root.unmount());
   host.remove();
 });

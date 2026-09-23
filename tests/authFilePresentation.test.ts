@@ -62,6 +62,26 @@ describe('auth-file account presentation', () => {
     expect(names.get('two.json')).toBe('idx-two');
     expect(names.has('three.json')).toBe(false);
   });
+
+  test('distinguishes entries that share a physical Devin filename', () => {
+    const files = [
+      { name: 'shared.json', email: 'alice@example.com', type: 'devin', authIndex: 'idx-one' },
+      { name: 'shared.json', email: 'amy@example.com', type: 'devin', authIndex: 'idx-two' },
+    ];
+    const names = distinguishAuthFiles(files, 'Hidden email', 'Hidden auth-file name');
+    expect([...names.values()]).toEqual(['idx-one', 'idx-two']);
+  });
+
+  test('keeps collision labels unique when backend indices repeat', () => {
+    const files = [
+      { name: 'one.json', email: 'alice@example.com', authIndex: 'shared' },
+      { name: 'two.json', email: 'amy@example.com', authIndex: 'shared' },
+    ];
+    const names = distinguishAuthFiles(files, 'Hidden email', 'Hidden auth-file name');
+    expect(names.get('one.json')).toBe('shared');
+    expect(names.get('two.json')).toBeTruthy();
+    expect(names.get('two.json')).not.toBe('shared');
+  });
 });
 
 test('all supported languages provide reveal and hidden-value copy', async () => {

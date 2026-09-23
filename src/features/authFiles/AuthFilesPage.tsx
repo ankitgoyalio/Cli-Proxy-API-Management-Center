@@ -701,7 +701,7 @@ export function AuthFilesPage() {
                 file={file}
                 compact={compactMode}
                 selected={selectedFiles.has(file.name)}
-                distinguisher={distinguishers.get(file.name)}
+                distinguisher={distinguishers.get(getQuotaCacheKey(file))}
                 resolvedTheme={resolvedTheme}
                 disableControls={disableControls}
                 deleting={deleting}

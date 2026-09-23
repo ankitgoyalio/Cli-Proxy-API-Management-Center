@@ -87,15 +87,6 @@
 
 .revealButton {
   flex: none;
-  border: 0;
-  background: none;
-  color: var(--text-secondary);
-  font-size: 11px;
-  cursor: pointer;
-  &:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
-  }
 }
 
 /* ---------- body 容器 ---------- */

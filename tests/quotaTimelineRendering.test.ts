@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import '../src/i18n/index';
+import i18n from '../src/i18n/index';
 import { QuotaTimeline } from '../src/features/quota/components/QuotaTimeline';
 import type { QuotaFileEntry } from '../src/features/quota/logic';
 import { buildKimiQuotaRows } from '../src/utils/quota';
@@ -95,6 +95,36 @@ describe('QuotaTimeline rendering', () => {
     );
     expect(revealed).toContain('alice@example.com');
     expect(revealed).not.toContain('bob@example.com');
+  });
+
+  test('hides a malformed account field in timeline text and titles', () => {
+    const markup = renderToStaticMarkup(
+      createElement(QuotaTimeline, {
+        ...baseProps,
+        entries: [
+          {
+            file: { name: 'devin-profile.json', email: 'broken-address', type: 'devin' },
+            type: 'devin',
+          },
+        ],
+        quotaFor: () => ({
+          status: 'success',
+          windows: [
+            {
+              id: 'weekly',
+              remainingPercent: 75,
+              resetAtMs: new Date(2026, 7, 1, 12).getTime(),
+              periodHours: 168,
+            },
+          ],
+        }),
+        onToggleReveal: () => {},
+      })
+    );
+    expect(markup).toContain(i18n.t('auth_files.hidden_email'));
+    expect(markup).not.toContain('broken-address');
+    expect(markup).toContain(i18n.t('auth_files.show_email'));
+    expect(markup).toContain('aria-pressed="false"');
   });
 
   test('shows the selected period date instead of always labelling it Today', () => {

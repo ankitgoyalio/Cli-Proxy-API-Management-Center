@@ -1,4 +1,5 @@
 import type { AuthFileItem } from '@/types/authFile';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { deriveAuthFileIdentity, type AuthFileIdentity } from './identity';
 
 const emailPattern = /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9-]+(?:\.[A-Z0-9-]+)*\.[A-Z]{2,}$/i;
@@ -60,12 +61,19 @@ export function distinguishAuthFiles(
   const result = new Map<string, string>();
   for (const group of groups.values()) {
     if (group.length < 2) continue;
+    const used = new Set<string>();
     for (const file of group) {
       const index = readText(file.authIndex);
       const safeIndex = /^[a-zA-Z0-9_-]{1,24}$/.test(index) ? index : '';
       let hash = 0;
-      for (const char of file.name) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
-      result.set(file.name, safeIndex || hash.toString(36).padStart(6, '0').slice(-6));
+      const key = getQuotaCacheKey(file);
+      for (const char of key) hash = (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0;
+      const hashed = hash.toString(36).padStart(6, '0');
+      let identifier = safeIndex && !used.has(safeIndex) ? safeIndex : hashed;
+      let suffix = 2;
+      while (used.has(identifier)) identifier = `${hashed}-${suffix++}`;
+      used.add(identifier);
+      result.set(key, identifier);
     }
   }
   return result;

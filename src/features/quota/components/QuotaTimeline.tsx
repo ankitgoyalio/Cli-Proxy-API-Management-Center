@@ -15,6 +15,7 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/Button';
 import { formatRelativeInstant, TYPE_COLORS } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { useNow } from '@/hooks/useNow';
@@ -103,7 +104,8 @@ export function QuotaTimeline({
           presentQuotaName(
             entry.file,
             revealedNames?.has(getQuotaCacheKey(entry.file)) ?? false,
-            t('auth_files.hidden_auth_file_name')
+            t('auth_files.hidden_auth_file_name'),
+            t('auth_files.hidden_email')
           )
         ),
         provider: entry.type,
@@ -351,7 +353,12 @@ function Lane({
 }: LaneProps) {
   const { t, i18n } = useTranslation();
   const displayName = file
-    ? presentQuotaName(file, revealed, t('auth_files.hidden_auth_file_name'))
+    ? presentQuotaName(
+        file,
+        revealed,
+        t('auth_files.hidden_auth_file_name'),
+        t('auth_files.hidden_email')
+      )
     : lane.displayName;
 
   const windows = useMemo(
@@ -386,14 +393,16 @@ function Lane({
             {displayName}
           </span>
           {file && canRevealQuotaName(file) && onToggleReveal && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
               className={styles.revealButton}
               aria-pressed={revealed}
               onClick={onToggleReveal}
             >
               {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
-            </button>
+            </Button>
           )}
           {periodLabel && <span className={styles.lanePeriod}>{periodLabel}</span>}
         </div>
