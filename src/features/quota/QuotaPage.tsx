@@ -51,6 +51,7 @@ import type { QuotaProviderType } from './providers/types';
 import { useDevinQuotaAutoLoad } from './providers/devin/useDevinQuotaAutoLoad';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
+import { useQuotaReveal } from './hooks/useQuotaReveal';
 import { readQuotaUiState, writeQuotaUiState } from './uiState';
 import styles from './QuotaPage.module.scss';
 
@@ -68,23 +69,10 @@ export function QuotaPage() {
   const location = useLocation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
-  const revealScope = `${location.key}:${sessionGeneration}:${connectionStatus}`;
-  const [revealState, setRevealState] = useState<{ routeKey: string; names: Set<string> }>(() => ({
-    routeKey: revealScope,
-    names: new Set(),
-  }));
-  const revealedNames =
-    revealState.routeKey === revealScope ? revealState.names : new Set<string>();
-  const toggleReveal = useCallback(
-    (key: string) => {
-      setRevealState((current) => {
-        const names = new Set(current.routeKey === revealScope ? current.names : []);
-        if (names.has(key)) names.delete(key);
-        else names.add(key);
-        return { routeKey: revealScope, names };
-      });
-    },
-    [revealScope]
+  const { revealedNames, toggleReveal, clearReveals } = useQuotaReveal(
+    location.key,
+    sessionGeneration,
+    connectionStatus
   );
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
 
@@ -191,9 +179,9 @@ export function QuotaPage() {
     (value: string) => {
       setSearch(value);
       setPage(1);
-      setRevealState({ routeKey: revealScope, names: new Set() });
+      clearReveals();
     },
-    [revealScope]
+    [clearReveals]
   );
 
   const resolveNextRecovery = useCallback(
@@ -215,20 +203,20 @@ export function QuotaPage() {
     (next: string) => {
       setTab(next as QuotaTabId);
       setPage(1);
-      setRevealState({ routeKey: revealScope, names: new Set() });
+      clearReveals();
       writeQuotaUiState({ tab: next as QuotaTabId });
     },
-    [revealScope]
+    [clearReveals]
   );
 
   const handleSortModeChange = useCallback(
     (next: string) => {
       setSortMode(next as QuotaSortMode);
       setPage(1);
-      setRevealState({ routeKey: revealScope, names: new Set() });
+      clearReveals();
       writeQuotaUiState({ sortMode: next as QuotaSortMode });
     },
-    [revealScope]
+    [clearReveals]
   );
 
   const sortOptions = useMemo(
@@ -472,7 +460,7 @@ export function QuotaPage() {
               size="sm"
               onClick={() => {
                 setPage(Math.max(1, currentPage - 1));
-                setRevealState({ routeKey: revealScope, names: new Set() });
+                clearReveals();
               }}
               disabled={currentPage <= 1}
             >
@@ -490,7 +478,7 @@ export function QuotaPage() {
               size="sm"
               onClick={() => {
                 setPage(Math.min(totalPages, currentPage + 1));
-                setRevealState({ routeKey: revealScope, names: new Set() });
+                clearReveals();
               }}
               disabled={currentPage >= totalPages}
             >
