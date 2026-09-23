@@ -66,24 +66,26 @@ const displayNameFor = (name: string) => name;
 export function QuotaPage() {
   const { t } = useTranslation();
   const location = useLocation();
+  const connectionStatus = useAuthStore((state) => state.connectionStatus);
+  const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
+  const revealScope = `${location.key}:${sessionGeneration}:${connectionStatus}`;
   const [revealState, setRevealState] = useState<{ routeKey: string; names: Set<string> }>(() => ({
-    routeKey: location.key,
+    routeKey: revealScope,
     names: new Set(),
   }));
   const revealedNames =
-    revealState.routeKey === location.key ? revealState.names : new Set<string>();
+    revealState.routeKey === revealScope ? revealState.names : new Set<string>();
   const toggleReveal = useCallback(
     (key: string) => {
       setRevealState((current) => {
-        const names = new Set(current.routeKey === location.key ? current.names : []);
+        const names = new Set(current.routeKey === revealScope ? current.names : []);
         if (names.has(key)) names.delete(key);
         else names.add(key);
-        return { routeKey: location.key, names };
+        return { routeKey: revealScope, names };
       });
     },
-    [location.key]
+    [revealScope]
   );
-  const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const resolvedTheme: ResolvedTheme = useThemeStore((state) => state.resolvedTheme);
 
   const [files, setFiles] = useState<AuthFileItem[]>([]);
@@ -103,7 +105,6 @@ export function QuotaPage() {
 
   /* ---------- 文件列表 ---------- */
 
-  const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
   const [filesGeneration, setFilesGeneration] = useState<number | null>(null);
   const listRequestRef = useRef(0);
   const loadFiles = useCallback(async () => {
@@ -190,9 +191,9 @@ export function QuotaPage() {
     (value: string) => {
       setSearch(value);
       setPage(1);
-      setRevealState({ routeKey: location.key, names: new Set() });
+      setRevealState({ routeKey: revealScope, names: new Set() });
     },
-    [location.key]
+    [revealScope]
   );
 
   const resolveNextRecovery = useCallback(
@@ -214,20 +215,20 @@ export function QuotaPage() {
     (next: string) => {
       setTab(next as QuotaTabId);
       setPage(1);
-      setRevealState({ routeKey: location.key, names: new Set() });
+      setRevealState({ routeKey: revealScope, names: new Set() });
       writeQuotaUiState({ tab: next as QuotaTabId });
     },
-    [location.key]
+    [revealScope]
   );
 
   const handleSortModeChange = useCallback(
     (next: string) => {
       setSortMode(next as QuotaSortMode);
       setPage(1);
-      setRevealState({ routeKey: location.key, names: new Set() });
+      setRevealState({ routeKey: revealScope, names: new Set() });
       writeQuotaUiState({ sortMode: next as QuotaSortMode });
     },
-    [location.key]
+    [revealScope]
   );
 
   const sortOptions = useMemo(
@@ -471,7 +472,7 @@ export function QuotaPage() {
               size="sm"
               onClick={() => {
                 setPage(Math.max(1, currentPage - 1));
-                setRevealState({ routeKey: location.key, names: new Set() });
+                setRevealState({ routeKey: revealScope, names: new Set() });
               }}
               disabled={currentPage <= 1}
             >
@@ -489,7 +490,7 @@ export function QuotaPage() {
               size="sm"
               onClick={() => {
                 setPage(Math.min(totalPages, currentPage + 1));
-                setRevealState({ routeKey: location.key, names: new Set() });
+                setRevealState({ routeKey: revealScope, names: new Set() });
               }}
               disabled={currentPage >= totalPages}
             >
