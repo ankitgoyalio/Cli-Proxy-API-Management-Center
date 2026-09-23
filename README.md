@@ -4,10 +4,12 @@ A single-file Web UI (React + TypeScript) for operating and troubleshooting the 
 
 [中文文档](README_CN.md)
 
-**Main Project**: https://github.com/router-for-me/CLIProxyAPI
+**Compatible Backend**: https://github.com/router-for-me/CLIProxyAPI
 **Minimum Required Version**: ≥ 7.2.147 (recommended latest)
 
-Since version 6.0.19, the Web UI ships with the main program; access it via `/management.html` on the API port once the service is running.
+This independently maintained fork is not affiliated with, endorsed by, or sponsored by Router-For.ME or any provider listed in the application.
+
+Since version 6.0.19, the Web UI ships with the Compatible Backend; access it via `/management.html` on the API port once the service is running.
 
 ## What this is (and isn’t)
 
