@@ -117,7 +117,8 @@ The UI language is automatically detected from browser settings and can be manua
 ## Build & release notes
 
 - Vite produces a **single HTML** output (`dist/index.html`) with all assets inlined (via `vite-plugin-singlefile`).
-- Pushing a `vX.Y.Z` tag triggers `.github/workflows/release.yml` to verify the tagged commit and publish `dist/management.html`.
+- Releases use UTC Calendar Versioning in the form `vYYYY.MM.DD.N`, where `N` starts at `1` and increments for additional releases on the same day (for example, `v2026.09.23.1`).
+- Pushing a valid release tag triggers `.github/workflows/release.yml` to verify the tagged commit and publish `dist/management.html`.
 - The UI version shown on the System page is injected at build time (env `VERSION`, git tag, or `package.json` fallback).
 
 ## Security notes
