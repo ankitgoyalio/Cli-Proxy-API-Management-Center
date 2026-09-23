@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authFilesApi, type AuthFileFieldsPatch } from '@/services/api';
 import type { AuthFileItem } from '@/types';
+import { presentAuthFileName } from '@/features/authFiles/presentation';
 import { useNotificationStore } from '@/stores';
 import {
   applyAuthFileWebsockets,
@@ -691,7 +692,12 @@ export function useAuthFilesPrefixProxyEditor(
 
     try {
       await authFilesApi.patchFields(name, payload);
-      showNotification(t('auth_files.prefix_proxy_saved_success', { name }), 'success');
+      showNotification(
+        t('auth_files.prefix_proxy_saved_success', {
+          name: presentAuthFileName(name, '', false, t('auth_files.hidden_auth_file_name')),
+        }),
+        'success'
+      );
       await loadFiles();
       setPrefixProxyEditor(null);
     } catch (err: unknown) {

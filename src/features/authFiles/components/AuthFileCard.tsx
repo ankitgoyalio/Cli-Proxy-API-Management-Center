@@ -28,7 +28,7 @@ import {
   type AuthFileQuotaFilter,
   type ResolvedTheme,
 } from '@/features/authFiles/constants';
-import { deriveAuthFileIdentity } from '@/features/authFiles/identity';
+import { presentAuthFile } from '@/features/authFiles/presentation';
 import { resolveAuthFileQuotaType } from '@/features/authFiles/logic';
 import type { AuthFileStatusBarData } from '@/features/authFiles/hooks/useAuthFilesStatusBarCache';
 import { AuthFileQuotaSection } from '@/features/authFiles/components/AuthFileQuotaSection';
@@ -39,6 +39,7 @@ export type AuthFileCardProps = {
   file: AuthFileItem;
   compact: boolean;
   selected: boolean;
+  distinguisher?: string;
   resolvedTheme: ResolvedTheme;
   disableControls: boolean;
   deleting: string | null;
@@ -63,6 +64,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
     file,
     compact,
     selected,
+    distinguisher,
     resolvedTheme,
     disableControls,
     deleting,
@@ -106,7 +108,18 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const weightValue = Number.isSafeInteger(file.weight) ? file.weight : undefined;
   const noteValue = typeof file.note === 'string' ? file.note.trim() : '';
   // 主行显示账号（email/项目 ID），文件名降为满卡宽的 mono 副行
-  const identity = deriveAuthFileIdentity(file);
+  const [revealed, setRevealed] = useState(false);
+  const identity = presentAuthFile(
+    file,
+    revealed,
+    t('auth_files.hidden_email'),
+    t('auth_files.hidden_auth_file_name')
+  );
+  const safeName = identity.fullName;
+  const safeDistinguisher = distinguisher
+    ? t('auth_files.credential_distinguisher', { id: distinguisher })
+    : null;
+  const accessibleName = safeDistinguisher ? `${safeName} ${safeDistinguisher}` : safeName;
 
   // 挂载时捕获一次入场延迟：父级随后传 null 也不会中断已开始的动画
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
@@ -131,8 +144,8 @@ export function AuthFileCard(props: AuthFileCardProps) {
             checked={selected}
             onChange={() => onToggleSelect(file.name)}
             className={styles.selection}
-            ariaLabel={t('auth_files.card_select', { name: file.name })}
-            title={t('auth_files.card_select', { name: file.name })}
+            ariaLabel={t('auth_files.card_select', { name: accessibleName })}
+            title={t('auth_files.card_select', { name: accessibleName })}
           />
         )}
         <h3 className={styles.identity}>
@@ -153,10 +166,23 @@ export function AuthFileCard(props: AuthFileCardProps) {
             {identity.primary}
           </span>
         </h3>
+        {identity.revealable && (
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            aria-pressed={revealed}
+            onClick={() => setRevealed((value) => !value)}
+          >
+            {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
+          </Button>
+        )}
         {isRuntimeOnly && (
           <span className={styles.runtimeLabel}>{t('auth_files.type_virtual')}</span>
         )}
       </header>
+
+      {safeDistinguisher && <span className={styles.distinguisher}>{safeDistinguisher}</span>}
 
       {identity.secondary && (
         <p className={styles.fileName} title={identity.fullName}>
@@ -304,7 +330,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
           <div className={styles.toggleWrap}>
             <span className={styles.toggleLabel}>{t('auth_files.status_toggle_label')}</span>
             <ToggleSwitch
-              ariaLabel={t('auth_files.card_toggle', { name: file.name })}
+              ariaLabel={t('auth_files.card_toggle', { name: accessibleName })}
               checked={!file.disabled}
               disabled={disableControls || statusUpdating[file.name] === true || isManualRefreshing}
               onChange={(value) => onToggleStatus(file, value)}

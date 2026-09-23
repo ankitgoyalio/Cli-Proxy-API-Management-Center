@@ -22,6 +22,7 @@ import {
   type ResolvedTheme,
 } from '@/features/authFiles/constants';
 import { AuthFileCard } from '@/features/authFiles/components/AuthFileCard';
+import { distinguishAuthFiles, presentAuthFileName } from '@/features/authFiles/presentation';
 import { AuthFileDetailsSheet } from '@/features/authFiles/components/AuthFileDetailsSheet';
 import { AuthFileModelsModal } from '@/features/authFiles/components/AuthFileModelsModal';
 import { AuthFilesToolbar } from '@/features/authFiles/components/AuthFilesToolbar';
@@ -448,6 +449,16 @@ export function AuthFilesPage() {
   const currentPage = Math.min(page, totalPages);
   const start = (currentPage - 1) * pageSize;
   const pageItems = useMemo(() => sorted.slice(start, start + pageSize), [pageSize, sorted, start]);
+  const distinguishers = useMemo(
+    () =>
+      distinguishAuthFiles(
+        pageItems,
+        t('auth_files.hidden_email'),
+        t('auth_files.hidden_auth_file_name')
+      ),
+    [pageItems, t]
+  );
+
   const selectablePageItems = useMemo(
     () => pageItems.filter((file) => !isRuntimeOnlyAuthFile(file)),
     [pageItems]
@@ -690,6 +701,7 @@ export function AuthFilesPage() {
                 file={file}
                 compact={compactMode}
                 selected={selectedFiles.has(file.name)}
+                distinguisher={distinguishers.get(file.name)}
                 resolvedTheme={resolvedTheme}
                 disableControls={disableControls}
                 deleting={deleting}
@@ -771,7 +783,12 @@ export function AuthFilesPage() {
 
       <AuthFileModelsModal
         open={modelsModalOpen}
-        fileName={modelsFileName}
+        fileName={presentAuthFileName(
+          modelsFileName,
+          files.find((file) => file.name === modelsFileName)?.email ?? '',
+          false,
+          t('auth_files.hidden_auth_file_name')
+        )}
         fileType={modelsFileType}
         loading={modelsLoading}
         error={modelsError}
