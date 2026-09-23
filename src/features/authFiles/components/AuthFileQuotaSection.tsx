@@ -10,6 +10,7 @@ import type { AuthFileItem } from '@/types';
 import { getStatusFromError, resolveQuotaErrorMessage } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { isRuntimeOnlyAuthFile, type QuotaProviderType } from '@/features/authFiles/constants';
+import { presentAuthFileName } from '@/features/authFiles/presentation';
 import { Button } from '@/components/ui/Button';
 import { IconRefreshCw } from '@/components/ui/icons';
 import { bindQuotaClasses } from '@/features/quota/types';
@@ -41,6 +42,12 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
   const [resettingQuota, setResettingQuota] = useState(false);
   const adapter = QUOTA_ADAPTERS[quotaType];
   const cacheKey = getQuotaCacheKey(file);
+  const safeName = presentAuthFileName(
+    file.name,
+    file.email ?? '',
+    false,
+    t('auth_files.hidden_auth_file_name')
+  );
 
   const storedQuota = useQuotaStore((state) => {
     if (quotaType === 'antigravity')
@@ -79,7 +86,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
           ...prev,
           [cacheKey]: adapter.buildSuccessState(data),
         }));
-        showNotification(t('auth_files.quota_refresh_success', { name: file.name }), 'success');
+        showNotification(t('auth_files.quota_refresh_success', { name: safeName }), 'success');
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('common.unknown_error');
@@ -90,7 +97,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
           [cacheKey]: adapter.buildErrorState(message, status),
         }));
         showNotification(
-          t('auth_files.quota_refresh_failed', { name: file.name, message }),
+          t('auth_files.quota_refresh_failed', { name: safeName, message }),
           'error'
         );
       });
@@ -101,6 +108,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
     disableControls,
     file,
     quota?.status,
+    safeName,
     showNotification,
     t,
     updateQuotaState,
@@ -118,7 +126,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
 
     showConfirmation({
       title: t('codex_quota.reset_confirm_title'),
-      message: t('codex_quota.reset_confirm_message', { name: file.name }),
+      message: t('codex_quota.reset_confirm_message', { name: safeName }),
       confirmText: t('codex_quota.reset_confirm_button'),
       variant: 'primary',
       onConfirm: async () => {
@@ -131,12 +139,12 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
               ...prev,
               [cacheKey]: adapter.buildSuccessState(data),
             }));
-            showNotification(t('codex_quota.reset_success', { name: file.name }), 'success');
+            showNotification(t('codex_quota.reset_success', { name: safeName }), 'success');
           });
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : t('common.unknown_error');
           commitIfQuotaCacheCurrent(cacheGeneration, () => {
-            showNotification(t('codex_quota.reset_failed', { name: file.name, message }), 'error');
+            showNotification(t('codex_quota.reset_failed', { name: safeName, message }), 'error');
           });
         } finally {
           setResettingQuota(false);
@@ -151,6 +159,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
     quota?.status,
     resettingQuota,
     showConfirmation,
+    safeName,
     showNotification,
     t,
     updateQuotaState,

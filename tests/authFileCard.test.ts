@@ -23,10 +23,10 @@ describe('auth file card presentation contract', () => {
     const footer = source.split('<footer')[1].split('</footer>')[0];
     expect(source.match(/<ToggleSwitch/g)).toHaveLength(1);
     expect(header).not.toContain('<ToggleSwitch');
-    expect(header).toContain("ariaLabel={t('auth_files.card_select', { name: file.name })}");
+    expect(header).toContain("ariaLabel={t('auth_files.card_select', { name: accessibleName })}");
     expect(header).not.toContain('aria-label=');
     expect(footer).toContain('<ToggleSwitch');
-    expect(footer).toContain("t('auth_files.card_toggle', { name: file.name })");
+    expect(footer).toContain("t('auth_files.card_toggle', { name: accessibleName })");
     expect(footer).toContain('checked={!file.disabled}');
     expect(footer).toContain('statusUpdating[file.name] === true || isManualRefreshing');
     expect(footer).toContain('!isRuntimeOnly &&');
@@ -49,9 +49,7 @@ describe('auth file card presentation contract', () => {
       expect(messages.weight_tooltip).not.toMatch(/<[^>]+>/);
       expect(messages.weight_hint).toContain('<settingsLink>');
       expect(messages.weight_hint).toContain('</settingsLink>');
-      expect(messages.weight_tooltip).toBe(
-        messages.weight_hint.replace(/<\/?settingsLink>/g, '')
-      );
+      expect(messages.weight_tooltip).toBe(messages.weight_hint.replace(/<\/?settingsLink>/g, ''));
     }
   });
 

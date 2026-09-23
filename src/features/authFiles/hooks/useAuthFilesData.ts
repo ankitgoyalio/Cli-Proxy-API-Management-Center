@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type RefObj
 import { useTranslation } from 'react-i18next';
 import { authFilesApi } from '@/services/api';
 import { notifyAuthFilesChanged } from '@/features/authFiles/authFilesEvents';
+import { presentAuthFileName } from '@/features/authFiles/presentation';
 import { useNotificationStore } from '@/stores';
 import type { AuthFileItem } from '@/types';
 import { formatFileSize } from '@/utils/format';
@@ -99,6 +100,11 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
   useEffect(() => {
     onFilesMutatedRef.current = onFilesMutated;
   }, [onFilesMutated]);
+  const safeName = useCallback(
+    (name: string, email = '') =>
+      presentAuthFileName(name, email, false, t('auth_files.hidden_auth_file_name')),
+    [t]
+  );
   const selectionCount = selectedFiles.size;
   const toggleSelect = useCallback((name: string) => {
     setSelectedFiles((prev) => {
@@ -147,28 +153,31 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
     setSelectedFiles(new Set());
   }, []);
 
-  const applyDeletedFiles = useCallback((names: string[]) => {
-    const deletedNames = Array.from(new Set(names.map((name) => name.trim()).filter(Boolean)));
-    if (deletedNames.length === 0) return;
+  const applyDeletedFiles = useCallback(
+    (names: string[]) => {
+      const deletedNames = Array.from(new Set(names.map((name) => name.trim()).filter(Boolean)));
+      if (deletedNames.length === 0) return;
 
-    invalidateInFlightLoads();
-    onFilesMutatedRef.current?.(deletedNames);
-    const deletedSet = new Set(deletedNames);
-    setFiles((prev) => prev.filter((file) => !deletedSet.has(file.name)));
-    setSelectedFiles((prev) => {
-      if (prev.size === 0) return prev;
-      let changed = false;
-      const next = new Set<string>();
-      prev.forEach((name) => {
-        if (deletedSet.has(name)) {
-          changed = true;
-        } else {
-          next.add(name);
-        }
+      invalidateInFlightLoads();
+      onFilesMutatedRef.current?.(deletedNames);
+      const deletedSet = new Set(deletedNames);
+      setFiles((prev) => prev.filter((file) => !deletedSet.has(file.name)));
+      setSelectedFiles((prev) => {
+        if (prev.size === 0) return prev;
+        let changed = false;
+        const next = new Set<string>();
+        prev.forEach((name) => {
+          if (deletedSet.has(name)) {
+            changed = true;
+          } else {
+            next.add(name);
+          }
+        });
+        return changed ? next : prev;
       });
-      return changed ? next : prev;
-    });
-  }, [invalidateInFlightLoads]);
+    },
+    [invalidateInFlightLoads]
+  );
 
   useEffect(() => {
     if (selectedFiles.size === 0) return;
@@ -282,7 +291,9 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         }
 
         if (result.failed.length > 0) {
-          const details = result.failed.map((item) => `${item.name}: ${item.error}`).join('; ');
+          const details = result.failed
+            .map((item) => `${safeName(item.name)}: ${item.error}`)
+            .join('; ');
           showNotification(`${t('notification.upload_failed')}: ${details}`, 'error');
         }
       } catch (err: unknown) {
@@ -294,14 +305,14 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         event.target.value = '';
       }
     },
-    [loadFiles, showNotification, t]
+    [loadFiles, safeName, showNotification, t]
   );
 
   const handleDelete = useCallback(
     (name: string) => {
       showConfirmation({
         title: t('auth_files.delete_title', { defaultValue: 'Delete File' }),
-        message: `${t('auth_files.delete_confirm')} "${name}" ?`,
+        message: `${t('auth_files.delete_confirm')} "${safeName(name, files.find((file) => file.name === name)?.email)}" ?`,
         variant: 'danger',
         confirmText: t('common.confirm'),
         onConfirm: async () => {
@@ -320,7 +331,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         },
       });
     },
-    [applyDeletedFiles, showConfirmation, showNotification, t]
+    [applyDeletedFiles, files, safeName, showConfirmation, showNotification, t]
   );
 
   const handleDeleteAll = useCallback(
@@ -468,7 +479,15 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         },
       });
     },
-    [applyDeletedFiles, deselectAll, files, invalidateInFlightLoads, showConfirmation, showNotification, t]
+    [
+      applyDeletedFiles,
+      deselectAll,
+      files,
+      invalidateInFlightLoads,
+      showConfirmation,
+      showNotification,
+      t,
+    ]
   );
 
   const handleDownload = useCallback(
@@ -504,12 +523,18 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
 
       try {
         await authFilesApi.requestManualRefresh(name);
-        showNotification(t('auth_files.manual_refresh_requested', { name }), 'info');
+        showNotification(
+          t('auth_files.manual_refresh_requested', { name: safeName(name, item.email) }),
+          'info'
+        );
         notifyAuthFilesChanged();
         onFilesMutatedRef.current?.([name]);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : t('notification.update_failed');
-        showNotification(t('auth_files.manual_refresh_failed', { name, message }), 'error');
+        showNotification(
+          t('auth_files.manual_refresh_failed', { name: safeName(name, item.email), message }),
+          'error'
+        );
       } finally {
         manualRefreshPendingRef.current.delete(name);
         setManualRefreshing((prev) => {
@@ -520,7 +545,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         });
       }
     },
-    [showNotification, t]
+    [safeName, showNotification, t]
   );
 
   const handleStatusToggle = useCallback(
@@ -541,8 +566,8 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         );
         showNotification(
           enabled
-            ? t('auth_files.status_enabled_success', { name })
-            : t('auth_files.status_disabled_success', { name }),
+            ? t('auth_files.status_enabled_success', { name: safeName(name, item.email) })
+            : t('auth_files.status_disabled_success', { name: safeName(name, item.email) }),
           'success'
         );
       } catch (err: unknown) {
@@ -560,7 +585,7 @@ export function useAuthFilesData(options?: UseAuthFilesDataOptions): UseAuthFile
         });
       }
     },
-    [invalidateInFlightLoads, showNotification, t]
+    [invalidateInFlightLoads, safeName, showNotification, t]
   );
 
   const batchSetStatus = useCallback(
