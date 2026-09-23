@@ -47,10 +47,14 @@ Compatible Backend configuration field rather than Management Center Promotion.
   each locale, without allowing the configured fallback language to hide a missing entry.
 - Focused rendering tests preserve ordinary provider management, Kimi OAuth, plugin trust,
   accessible link names, and external-link semantics.
+- Headless Chromium inspection at 1440×900 and 375×812 covered provider management, OAuth,
+  Config Panel proxy fields, navigation, plugin management, and System/About using synthetic
+  Management API responses. It confirmed named keyboard focus, external-link `href`/`rel`
+  semantics, no page-level horizontal overflow, no known promotional copy, and the reduced-motion
+  media preference on both viewports.
 
 ## Integration limits
 
-Browser automation was unavailable in the implementation environment, and no live Compatible
-Backend or real provider credentials were available. Desktop and narrow-width route inspection,
-live provider mutations, OAuth completion, quota requests, plugin installation, and config
-persistence are therefore not claimed as verified.
+No live Compatible Backend or real provider credentials were available. Live provider mutations,
+OAuth completion, quota requests, plugin installation, and config persistence are therefore not
+claimed as verified.
