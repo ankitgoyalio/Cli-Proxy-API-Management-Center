@@ -15,18 +15,18 @@ const i18n = createInstance();
 await i18n.init({ lng: 'en', resources: { en: { translation: en } } });
 
 describe('Kimi regional login', () => {
-  test('uses separate management endpoints and preserves cancellation', async () => {
+  test('uses separate provider parameters and preserves cancellation', async () => {
     const get = spyOn(apiClient, 'get').mockResolvedValue({ url: 'https://example.test' });
     const controller = new AbortController();
     try {
       await oauthApi.startAuth('kimi', controller.signal);
-      expect(get).toHaveBeenLastCalledWith('/kimi-auth-url', {
-        params: undefined,
+      expect(get).toHaveBeenLastCalledWith('/oauth/auth-url', {
+        params: { provider: 'kimi' },
         signal: controller.signal,
       });
       await oauthApi.startAuth('kimi-ai', controller.signal);
-      expect(get).toHaveBeenLastCalledWith('/kimi-ai-auth-url', {
-        params: undefined,
+      expect(get).toHaveBeenLastCalledWith('/oauth/auth-url', {
+        params: { provider: 'kimi-ai' },
         signal: controller.signal,
       });
     } finally {

@@ -50,6 +50,7 @@ Temporary Items
 .DS_*
 *.log
 logs
+!src/features/logs/
 **/*.backup.*
 **/*.back.*
 
