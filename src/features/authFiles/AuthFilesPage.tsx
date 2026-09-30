@@ -128,6 +128,7 @@ export function AuthFilesPage() {
     deletingAll,
     statusUpdating,
     manualRefreshing,
+    cooldownResetting,
     batchStatusUpdating,
     fileInputRef,
     loadFiles,
@@ -137,6 +138,7 @@ export function AuthFilesPage() {
     handleDeleteAll,
     handleDownload,
     handleManualRefresh,
+    handleCooldownReset,
     handleStatusToggle,
     toggleSelect,
     selectAllVisible,
@@ -707,12 +709,14 @@ export function AuthFilesPage() {
                 deleting={deleting}
                 statusUpdating={statusUpdating}
                 manualRefreshing={manualRefreshing}
+                cooldownResetting={cooldownResetting}
                 quotaFilterType={activeQuotaFilter}
                 statusBarCache={statusBarCache}
                 entranceDelayMs={cardEntranceDelay(index)}
                 onShowModels={showModels}
                 onDownload={handleDownload}
                 onManualRefresh={handleManualRefresh}
+                onCooldownReset={handleCooldownReset}
                 onOpenPrefixProxyEditor={openPrefixProxyEditor}
                 onDelete={handleDelete}
                 onToggleStatus={handleStatusToggle}

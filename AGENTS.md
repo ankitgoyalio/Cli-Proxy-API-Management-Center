@@ -3,7 +3,7 @@
 ## Scope and sources of truth
 
 This repository is the React/TypeScript management UI for CLI Proxy API. It is not the
-proxy server. The UI talks to the Management API under `/v0/management`.
+proxy server. The UI talks to the Management API under `/v8/management`.
 
 - Use the repository itself as the source of truth for commands, tooling, and structure;
   inspect `package.json`, configuration, and nearby code instead of copying them here.
