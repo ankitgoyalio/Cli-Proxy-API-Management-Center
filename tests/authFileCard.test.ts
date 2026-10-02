@@ -32,7 +32,8 @@ describe('auth file card presentation contract', () => {
     expect(footer).toContain('<ToggleSwitch');
     expect(footer).toContain("t('auth_files.card_toggle', { name: accessibleName })");
     expect(footer).toContain('checked={!file.disabled}');
-    expect(footer).toContain('statusUpdating[file.name] === true || isManualRefreshing');
+    expect(footer).toContain('statusUpdating[getAuthFileRefreshKey(file)] === true ||');
+    expect(footer).toContain('isManualRefreshing');
     expect(footer).toContain('!isRuntimeOnly &&');
   });
 

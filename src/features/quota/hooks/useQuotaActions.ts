@@ -16,6 +16,7 @@ import { getStatusFromError } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { presentAuthFileName } from '@/features/authFiles/presentation';
 import { presentQuotaFileName } from '../presentation';
+import { enrichQuotaInBackground } from '../quotaEnrichment';
 import { getQuotaMap, getQuotaSetter, type QuotaAdapter, type QuotaCardState } from '../providers';
 
 const getQuotaState = (adapter: QuotaAdapter, file: AuthFileItem): QuotaCardState | undefined =>
@@ -45,10 +46,12 @@ export function useQuotaActions(disableControls: boolean) {
       try {
         const data = await adapter.fetchQuota(file, t);
         commitIfQuotaCacheCurrent(cacheGeneration, () => {
+          const successState = adapter.buildSuccessState(data);
           setQuota((prev) => ({
             ...prev,
-            [cacheKey]: adapter.buildSuccessState(data),
+            [cacheKey]: successState,
           }));
+          void enrichQuotaInBackground(adapter, file, data, successState, t);
           showNotification(t('auth_files.quota_refresh_success', { name: safeName }), 'success');
         });
       } catch (err: unknown) {
