@@ -5,7 +5,7 @@ the codebase.
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root.
+- **`GLOSSARY.md`** at the repo root.
 - **`docs/adr/`**: read ADRs that touch the area you’re about to work in.
 
 If these files don’t exist, **proceed silently**. Don’t flag their absence or suggest creating
@@ -17,7 +17,7 @@ resolved.
 This repository uses a single-context layout:
 
     /
-    ├── CONTEXT.md
+    ├── GLOSSARY.md
     ├── docs/adr/
     │   ├── 0001-example-decision.md
     │   └── 0002-another-decision.md
@@ -26,7 +26,7 @@ This repository uses a single-context layout:
 ## Use the glossary’s vocabulary
 
 When output names a domain concept—in an issue title, refactor proposal, hypothesis, or test
-name—use the term defined in `CONTEXT.md`. Don’t drift to synonyms the glossary explicitly
+name—use the term defined in `GLOSSARY.md`. Don’t drift to synonyms the glossary explicitly
 avoids.
 
 If the needed concept isn’t in the glossary, reconsider whether the language belongs to the
