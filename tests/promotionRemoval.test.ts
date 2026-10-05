@@ -9,7 +9,7 @@ import { ProxyUrlField } from '@/features/config/components/fields/sharedFields'
 import { forkPolicy } from '@/policies/forkPolicy';
 import { DEFAULT_VISUAL_VALUES } from '@/types/visualConfig';
 
-const localeFiles = ['en', 'ru', 'zh-CN', 'zh-TW'] as const;
+const localeFiles = ['en', 'ru', 'zh-CN', 'zh-TW', 'vi'] as const;
 
 const hasTranslation = (catalog: Record<string, unknown>, key: string): boolean => {
   const segments = key.split('.');
