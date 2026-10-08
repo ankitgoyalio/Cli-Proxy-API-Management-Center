@@ -25,6 +25,7 @@ import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
 import { canRevealQuotaName, presentQuotaName } from '../presentation';
 import { presentAuthFileName } from '@/features/authFiles/presentation';
 import { useClaudeResetGrants } from '../providers/claude/ClaudeResetGrants';
+import { ClaudeResetGrantDetails } from '../providers/claude/ClaudeResetGrantDetails';
 import bodyStyles from './QuotaBody.module.scss';
 import styles from './QuotaCard.module.scss';
 
@@ -150,6 +151,7 @@ export function QuotaCard(props: QuotaCardProps) {
                 <span className={quotaClasses.codexPlanValue}>{claudeReset.count ?? '--'}</span>
               </span>
             </div>
+            <ClaudeResetGrantDetails grants={claudeReset.grants} classes={quotaClasses} />
             {claudeReset.message && (
               <div role="status" className={quotaClasses.codexResetCreditsError}>
                 {t(`claude_reset.${claudeReset.message}`)}
