@@ -2,21 +2,26 @@
 
 Consult the patterns involved in the requested screen or flow. The examples below are original illustrations, not quotations or product behavior specifications. Use their wording only when the stated behavior is true of the app.
 
+## Flow and hierarchy (PACE)
+
+Use PACE when deciding what a screen says, where information appears, or how steps connect:
+
+- **Purpose:** Give each screen one primary job. Make it visible in the heading and action; supporting text adds distinct information. Disclose secondary detail where it becomes useful, while keeping informed-choice consequences beside the decision.
+- **Anticipation:** Answer the next likely question. Explain intermediate states and how someone will know when they can proceed; match each step to the expectation created by the previous one.
+- **Context:** Fit information to attention, device, surroundings, and emotional stakes. Put instructions beside the interaction that needs them. Move mistimed explanations or remove an unnecessary step instead of polishing around a hierarchy problem.
+- **Empathy:** Check assumptions about ability, identity, circumstances, and feelings. Apply the accessibility and localization checks below so the conversation works beyond its visual, source-language presentation.
+
 ## Headings, onboarding, and instructions
 
-Make the main purpose visible in the heading and primary action. Supporting text should add a benefit, explanation, or consequence that those elements do not already convey. Describe the reason for a request before its mechanics when that helps someone decide.
+Describe the reason for a request before its mechanics when that helps someone decide.
 
 For example, “To get pickup updates, add your phone number” explains a reason for providing information. It is appropriate only if those updates are the actual use; it must not disguise other material uses of that information.
 
-Give each step a distinct purpose. Distinguish completing setup from waiting for activation or processing, and explain how someone will know when they can proceed. Recommend moving information or removing an unnecessary step when hierarchy or timing is the underlying problem.
-
 ## Buttons and choices
 
-Use labels that predict their actual effects. Read important choices independently from the body text: someone scanning the buttons should still understand the decision. Established navigation labels such as “Next” can work when the action is simply advancing through a flow.
+Established navigation labels such as “Next” can work when the action is simply advancing through a flow.
 
 When cancellation is itself the task, name the alternatives explicitly. For a hypothetical booking flow, “Cancel Booking” and “Keep Booking” make the outcomes clearer than “Confirm” and “Cancel.” Identify the affected booking and disclose relevant consequences based on the actual policy.
-
-Use the platform's control semantics and the project's conventions. The position and color of buttons in an old transcript example are not universal layout rules.
 
 ## Errors and blocked actions
 
@@ -44,14 +49,14 @@ For example, an unused saved-trails list could say “No Saved Trails” with �
 
 ## Notifications and progress
 
-Lead with the useful event, changed expectation, or benefit. Keep secondary detail relevant to a decision the person can make. Distinguish elapsed delay from remaining time: “delayed 10 minutes” and “arrives in 10 minutes” make different promises. Preserve estimates and uncertainty when the underlying data is uncertain.
+Give notifications useful, self-contained information or an available task: someone should learn what happened without opening the app. Lead with the event, changed expectation, or benefit; use expanded content for relevant detail or actions. Distinguish elapsed delay from remaining time: “delayed 10 minutes” and “arrives in 10 minutes” make different promises. Preserve estimates and uncertainty when the underlying data is uncertain.
 
-For progress, say what is happening and what the person should do or expect next when known. Reserve completion language for an actual completed state. Fit the message to a glance when attention is divided.
+For progress, say what is happening and what the person should do or expect next when known. Fit the message to a glance when attention is divided.
 
 ## Accessibility and localization
 
-Check that meaning survives the visual presentation. Controls need understandable accessible names; informative images and charts need descriptions of their relevant meaning or intention. Preserve useful native semantics and account for grouping and decorative content so the spoken experience stays coherent. Avoid relying solely on position, color, or imagery for necessary instructions.
+Check that meaning survives the visual presentation. Label controls by their function in context, rather than a glyph’s appearance. Disambiguate repeated actions with their object and update labels when the action changes with state. Rely on native role announcements instead of repeating “button” in the label. Informative images and charts need descriptions of their relevant meaning or intention; account for grouping and decorative content so the spoken experience stays coherent. Avoid relying solely on position, color, or imagery for necessary instructions.
 
 Allow for longer words, taller scripts, larger or bold text, and right-to-left layouts. Abbreviations that work in English may have different lengths or no equivalent in another language. Adapt the layout or wording without discarding essential meaning to fit an English-sized space.
 
-Use inclusive terms and culturally portable expressions appropriate to the audience. Flag idioms, jokes, and coined names for language review where needed. A source-language review can identify risks; it cannot certify every translation or the runtime VoiceOver experience.
+Use inclusive terms and culturally portable expressions appropriate to the audience. Avoid assumptions that a task is easy, that someone is happy, or that everyone shares a cultural reference. Flag idioms, jokes, and coined names for language review where needed. A source-language review can identify risks; it cannot certify every translation or the runtime VoiceOver experience.

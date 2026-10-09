@@ -1,58 +1,64 @@
 ---
 name: pull-request-message
-description: Draft or revise pull request and merge request descriptions using a What / Why / How structure. Use when the user asks for a PR or MR message, description, summary, or template content.
+description: Draft or revise PR and MR bodies with a visual summary, concrete evidence, and merge risk. Use when the user asks for a pull request or merge request message, description, summary, or template content.
 ---
 
 # Pull Request Message
 
-Produce an accurate, reviewer-oriented description with these required sections:
+Use this structure for the PR or MR body:
 
 ```markdown
-## What
+## Summary
 
-<What changed?>
+<compact visual and a brief explanation of the change>
 
-## Why
+## Evidence
 
-<Why is this necessary?>
+- **Before:** <observed behavior or available baseline>
+  **After:** <verified result>
 
-## How
+## Merge Danger
 
-<How was it implemented?>
-```
+**Door:** <one-way or two-way>
 
-Add any useful optional sections after `How`, in this order:
+<reason and practical rollback constraints, if needed>
 
-```markdown
-## Testing
+**Blast Radius:** <short scope label>
 
-## Screenshots
-
-## Risks
-
-## Rollback
+<affected users or systems and concrete failure modes, if needed>
 ```
 
 ## Gather the change
 
-- Use the user's intent, issue context, and supplied diff as the primary evidence.
-- In a Git worktree, inspect the repository's PR or MR template and compare the complete branch against its intended base when that context is needed. Distinguish committed branch changes from uncommitted work that would not be included.
-- Account for every material change in the comparison. Ask a focused question only when missing context would make the description misleading, especially the business reason or intended base.
-- Drafting a description does not authorize creating, updating, or merging a PR or MR.
+Use the user's intent, issue context, and supplied diff as evidence. In a Git worktree, inspect the repository template and compare the complete branch against its intended base. Distinguish committed changes from uncommitted work that would not be included. Cover every material change without a file-by-file inventory.
 
-## Write the required sections
+Ask a focused question only when missing context would make the description misleading. Drafting a body does not authorize creating, updating, or merging a PR or MR.
 
-- `What`: summarize observable behavior, API, data, configuration, or operational changes. Group related changes into concise bullets when there is more than one; avoid a file-by-file inventory.
-- `Why`: state the problem, user need, or engineering constraint that makes the change necessary. Explain the outcome sought rather than repeating `What`.
-- `How`: describe the important implementation approach and design decisions at reviewer depth. Include details that help validate the change; omit incidental mechanics visible directly in the diff.
+## Summary
 
-## Select optional sections
+Choose a compact representation suited to the change:
 
-- `Testing`: report the exact automated or manual checks and their outcomes. State that testing was not run, with the reason, when that fact is important. Never invent test execution or results.
-- `Screenshots`: include supplied or generated evidence for visible UI changes. Use clear before/after labels when both exist; omit the section when it adds no review value.
-- `Risks`: identify concrete compatibility, migration, rollout, performance, security, or operational risks and their mitigations. Avoid generic claims such as "low risk."
-- `Rollback`: give the practical reversal path when it is more involved than reverting the change, including feature flags, schema compatibility, or deployment ordering as applicable.
+- Pseudocode for algorithms; call trees for execution order.
+- Component trees for UI ownership and state; shallow file trees for responsibility changes.
+- Mermaid for interactions or data flow; a diff sketch for an existing structure's changes.
+- A complete code block when the new shape needs surrounding context.
+
+Pair the visual with a short explanation. Use repository terminology, including `GLOSSARY.md` when available.
+
+## Evidence
+
+Prefer before/after screenshots for visible changes and executed tests or output for behavior. Identify the check and its outcome.
+
+Never invent screenshots, test execution, or results. Label illustrative pseudocode as illustrative. If a baseline or verification is unavailable, say so; do not present an expected result as observed evidence.
+
+## Merge Danger
+
+Classify reversibility: two-way means a practical rollback exists; one-way means effects cannot readily be undone. Note data loss or migration constraints where relevant.
+
+Describe the affected scope and plausible consequences, such as consumer breakage or responsive layout regressions. Ground risk claims in the actual diff.
 
 ## Deliver
 
-Return ready-to-paste Markdown without commentary unless the user asks for alternatives or an explanation. Preserve repository-required metadata when a local template supplies it, while retaining the `What`, `Why`, and `How` sections. Provide a PR or MR title only when requested.
+Return ready-to-paste Markdown without preamble. Honor repository-required template fields; otherwise use the structure above. Provide a title only when requested.
+
+Adapted from [Matt Pocock's PR skill](https://github.com/mattpocock/skills/blob/main/skills/engineering/pr/SKILL.md), which credits [Dex Horthy's show-me skill](https://github.com/humanlayer/skills/blob/main/plugins/show-me/skills/show-me/SKILL.md).

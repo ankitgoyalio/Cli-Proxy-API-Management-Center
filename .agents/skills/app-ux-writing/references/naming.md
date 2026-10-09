@@ -16,9 +16,9 @@ Describe the person's experience or benefit at a level appropriate to the audien
 | Sets expectations | What will someone predict before opening or using it? Does actual behavior deliver on that expectation? Could it imply a broader capability, a judgment, or an unsupported guarantee? |
 | Works everywhere | Does it work in the app's menus, headings, instructions, platforms, and spoken language? What needs checking across intended languages and markets? |
 
-Choose priorities for the specific context and explain material tradeoffs. The criteria are guides rather than three mandatory passes. A branded name can be appropriate when its expression is valuable and the surrounding interface supplies the needed explanation. For consequential choices, ambiguity has a higher cost.
+Choose priorities for the specific context and explain material tradeoffs. A branded name can be appropriate when its expression is valuable and the surrounding interface supplies the needed explanation. For consequential choices, ambiguity has a higher cost.
 
-Consider descriptive, evocative, and coined candidates when useful. An emotional name can accurately express an experience. An invented compound can be understandable through its parts. Novelty by itself is not a reason to replace a well-understood term.
+Consider descriptive, evocative, and coined candidates when useful. Novelty by itself is not a reason to replace a well-understood term.
 
 ## Test in context
 
@@ -30,4 +30,4 @@ Place shortlisted names in real sentences and UI positions, for example:
 
 Use the actual grammar of the control: an action often benefits from a verb, while a destination needs a recognizable place or collection name. Check how the term behaves beside sibling labels, in constrained space, and when spoken aloud. Include an unfavorable state when relevant: a label that sounds motivating at a high value might feel judgmental at zero.
 
-Recommend the candidate that best expresses the intended themes and survives these contextual checks. Record the selected term in the applicable `WORD_LIST.md` when maintaining one is in scope, following the main skill's three-column format. Separate demonstrated fit from translation, market, or trademark questions that require additional review; a name alone cannot establish those claims.
+Recommend the candidate that best expresses the intended themes and survives these contextual checks. Separate demonstrated fit from translation, market, or trademark questions that require additional review; a name alone cannot establish those claims.

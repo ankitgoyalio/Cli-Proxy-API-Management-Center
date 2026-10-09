@@ -22,12 +22,8 @@ Voice is the enduring expression of the app's values; tone is its situational ba
 | Blocked task | Clarity and recovery | State the problem and a supported next step; retain details needed to fix it. |
 | Sensitive or consequential event | Precision and calm | State the known facts and choices without judgment or forced cheerfulness. |
 
-These priorities adapt to the app's own voice. They are not a requirement to use Apple's qualities or a fixed numerical scoring system.
-
 ## Resolve brevity and personality together
 
 The 2024 talk allows extra words for purposeful warmth; the 2025 talk removes words that contribute no meaning. Apply both: decide whether a phrase contributes to the relationship at this moment. A congratulation may help someone feel recognized; a playful interjection in a failed upload may undermine the recovery message.
 
 Evaluate adjectives, adverbs, apologies, pleasantries, and punctuation individually. Keep them when they convey necessary behavior or serve an appropriate tone. Avoid blanket deletion rules that flatten the voice or change meaning.
-
-Keep vocabulary decisions in the applicable `WORD_LIST.md`, following the word-list guidance in the main skill.
