@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import en from '../src/i18n/locales/en.json';
+import ko from '../src/i18n/locales/ko.json';
 import ru from '../src/i18n/locales/ru.json';
 import vi from '../src/i18n/locales/vi.json';
 import zhCN from '../src/i18n/locales/zh-CN.json';
@@ -36,7 +37,7 @@ describe('fork policy', () => {
   });
 
   test('localizes the independence statement in every supported language', () => {
-    const statements = [zhCN, zhTW, en, ru, vi].map(
+    const statements = [zhCN, zhTW, en, ru, vi, ko].map(
       (catalog) => catalog.system_info.independence_statement
     );
 
@@ -46,6 +47,7 @@ describe('fork policy', () => {
       'This independently maintained fork is not affiliated with, endorsed by, or sponsored by Router-For.ME or any provider listed in the application.',
       'Этот независимо поддерживаемый форк не связан с Router-For.ME или каким-либо поставщиком, указанным в приложении, не одобрен и не спонсируется ими.',
       'Bản fork này được duy trì độc lập, không có liên kết, không được chứng thực hay tài trợ bởi Router-For.ME hoặc bất kỳ nhà cung cấp nào được liệt kê trong ứng dụng.',
+      '이 포크는 독립적으로 유지 관리되며 Router-For.ME 또는 앱에 나열된 공급자와 제휴 관계가 없고, 이들의 보증이나 후원을 받지 않습니다.',
     ]);
   });
 });
