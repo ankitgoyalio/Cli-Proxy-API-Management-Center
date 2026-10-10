@@ -79,7 +79,7 @@ describe('promotion removal', () => {
       })
     );
 
-    const labelTarget = markup.match(/<label for="([^"]+)">[^<]+<\/label>/)?.[1];
+    const labelTarget = markup.match(/<label[^>]* for="([^"]+)"[^>]*>[^<]+<\/label>/)?.[1];
     expect(labelTarget).toBeTruthy();
     expect(markup).toContain(`<input id="${labelTarget}"`);
     expect(markup).toContain('value="socks5://proxy.example.test:1080/"');
