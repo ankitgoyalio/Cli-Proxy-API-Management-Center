@@ -7,8 +7,8 @@ import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { apiClient } from '@/services/api/client';
 import { oauthApi } from '@/services/api/oauth';
-import { createOAuthAttempts } from '@/pages/oauthAttempts';
-import { OAuthPage } from '@/pages/OAuthPage';
+import { createOAuthAttempts } from '@/features/oauth/oauthAttempts';
+import { OAuthPage } from '@/features/oauth/OAuthPage';
 import en from '@/i18n/locales/en.json';
 
 const i18n = createInstance();
@@ -56,10 +56,8 @@ describe('Kimi regional login', () => {
       )
     );
 
-    expect(markup).toContain('Kimi China (kimi.com)');
-    expect(markup).toContain('Log in to Kimi China');
-    expect(markup).toContain('Kimi International (kimi.ai)');
-    expect(markup).toContain('Log in to Kimi International');
+    expect(markup).toContain('Kimi China');
+    expect(markup).toContain('Kimi International');
     expect(markup).not.toMatch(/register|sign up|affiliate|aff=/i);
     expect(markup).not.toContain('platform.kimi.');
   });

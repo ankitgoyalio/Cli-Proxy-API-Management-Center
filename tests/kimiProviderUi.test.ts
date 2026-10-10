@@ -68,7 +68,7 @@ describe('Kimi provider UI', () => {
     const sourceFiles = [
       'src/features/providers/kimi.ts',
       'src/features/providers/components/ProviderResourcePanel.tsx',
-      'src/pages/OAuthPage.tsx',
+      'src/features/oauth/OAuthPage.tsx',
     ];
 
     for (const file of sourceFiles) {

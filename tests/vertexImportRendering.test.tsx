@@ -6,7 +6,7 @@ import { Window } from 'happy-dom';
 import { createInstance } from 'i18next';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
-import { OAuthPage } from '../src/pages/OAuthPage';
+import { OAuthPage } from '../src/features/oauth/OAuthPage';
 import { vertexApi } from '../src/services/api/vertex';
 import { pluginsApi } from '../src/services/api/plugins';
 import en from '../src/i18n/locales/en.json';
@@ -43,6 +43,14 @@ afterAll(async () => {
 const i18n = createInstance();
 await i18n.init({ lng: 'en', resources: { en: { translation: en } } });
 
+async function openVertex() {
+  const button = Array.from(document.querySelectorAll('button')).find(
+    (button) => button.textContent === 'Vertex AI'
+  );
+  if (button && !document.querySelector('input[type="file"]'))
+    await act(async () => button.click());
+}
+
 function NavigateButton() {
   const navigate = useNavigate();
   return createElement('button', { onClick: () => navigate('/config') }, 'Change route');
@@ -73,41 +81,47 @@ test('Vertex import masks uploaded and returned names, reveals locally, and send
         )
       )
     );
+    await openVertex();
     const file = new window.File(['{"project_id":"test"}'], 'key-alice@example.com.json', {
       type: 'application/json',
     });
-    const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+    await openVertex();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const files = new window.DataTransfer();
     files.items.add(file);
     input.files = files.files;
     await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
-    expect(host.innerHTML).toContain('Hidden auth-file name');
-    expect(host.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.innerHTML).toContain('Hidden auth-file name');
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
 
-    const importButton = Array.from(host.querySelectorAll('button')).find(
+    const importButton = Array.from(document.querySelectorAll('button')).find(
       (button) => button.textContent === 'Import Vertex Credential'
     );
     await act(async () => importButton!.click());
     expect(imported).toHaveBeenCalledWith(file, undefined);
-    expect(host.innerHTML).toContain('a***@e***.com');
-    expect(host.innerHTML).toContain('key-a***@e***.com.json');
-    expect(host.innerHTML).toContain('vertex-a***@e***.com-team.json');
-    expect(host.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.innerHTML).toContain('a***@e***.com');
+    expect(document.body.innerHTML).toContain('key-a***@e***.com.json');
+    expect(document.body.innerHTML).toContain('vertex-a***@e***.com-team.json');
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
 
-    const reveal = Array.from(host.querySelectorAll('button')).find(
+    const reveal = Array.from(document.querySelectorAll('button')).find(
       (button) => button.textContent === 'Show email'
     );
     expect(reveal?.getAttribute('aria-pressed')).toBe('false');
     await act(async () => reveal!.click());
-    expect(host.innerHTML).toContain('alice@example.com');
-    expect(host.innerHTML).toContain('key-alice@example.com.json');
-    expect(host.innerHTML).toContain('vertex-alice@example.com-team.json');
+    expect(document.body.innerHTML).toContain('alice@example.com');
+    expect(document.body.innerHTML).toContain('key-alice@example.com.json');
+    expect(document.body.innerHTML).toContain('vertex-alice@example.com-team.json');
     expect(reveal?.getAttribute('aria-pressed')).toBe('true');
     expect(reveal?.textContent).toBe('Hide email');
 
-    await act(async () => host.querySelector('button')!.click());
-    expect(host.innerHTML).not.toContain('alice@example.com');
-    expect(host.innerHTML).toContain('a***@e***.com');
+    await act(async () =>
+      Array.from(host.querySelectorAll('button'))
+        .find((button) => button.textContent === 'Change route')!
+        .click()
+    );
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.innerHTML).toContain('a***@e***.com');
   } finally {
     await act(async () => root.unmount());
     host.remove();
@@ -136,23 +150,25 @@ test('Vertex import hides malformed account fields and unresolved email-bearing 
         )
       )
     );
+    await openVertex();
     const file = new window.File(['{}'], 'key-alice@example.com.json', {
       type: 'application/json',
     });
     const files = new window.DataTransfer();
     files.items.add(file);
-    const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+    await openVertex();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     input.files = files.files;
     await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
-    const importButton = Array.from(host.querySelectorAll('button')).find(
+    const importButton = Array.from(document.querySelectorAll('button')).find(
       (button) => button.textContent === 'Import Vertex Credential'
     );
     await act(async () => importButton!.click());
-    expect(host.textContent).toContain('Hidden email');
-    expect(host.textContent).toContain('Hidden auth-file name');
-    expect(host.innerHTML).not.toContain('alice@example.com');
-    expect(host.innerHTML).not.toContain('bob@example.net');
-    expect(host.innerHTML).not.toContain('not-an-address');
+    expect(document.body.textContent).toContain('Hidden email');
+    expect(document.body.textContent).toContain('Hidden auth-file name');
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.innerHTML).not.toContain('bob@example.net');
+    expect(document.body.innerHTML).not.toContain('not-an-address');
   } finally {
     await act(async () => root.unmount());
     host.remove();
@@ -188,31 +204,32 @@ test('Vertex reveal resets when its page becomes a stacked navigation layer', as
     await act(async () =>
       root.render(createElement(I18nextProvider, { i18n }, createElement(LayerHarness)))
     );
-    const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+    await openVertex();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const files = new window.DataTransfer();
     files.items.add(
       new window.File(['{}'], 'key-alice@example.com.json', { type: 'application/json' })
     );
     input.files = files.files;
     await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
-    const reveal = Array.from(host.querySelectorAll('button')).find(
+    const reveal = Array.from(document.querySelectorAll('button')).find(
       (button) => button.textContent === 'Show email'
     )!;
     await act(async () => reveal.click());
-    expect(host.innerHTML).toContain('alice@example.com');
+    expect(document.body.innerHTML).toContain('alice@example.com');
     await act(async () =>
-      Array.from(host.querySelectorAll('button'))
+      Array.from(document.querySelectorAll('button'))
         .find((button) => button.textContent === 'Leave layer')!
         .click()
     );
-    expect(host.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
     await act(async () =>
-      Array.from(host.querySelectorAll('button'))
+      Array.from(document.querySelectorAll('button'))
         .find((button) => button.textContent === 'Return layer')!
         .click()
     );
-    expect(host.innerHTML).toContain('Hidden auth-file name');
-    expect(host.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.innerHTML).toContain('Hidden auth-file name');
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
   } finally {
     await act(async () => root.unmount());
     host.remove();
@@ -240,14 +257,15 @@ test('choosing another file during import leaves the new file ready to import', 
         )
       )
     );
-    const input = host.querySelector('input[type="file"]') as HTMLInputElement;
+    await openVertex();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const select = async (name: string) => {
       const files = new window.DataTransfer();
       files.items.add(new window.File(['{}'], name, { type: 'application/json' }));
       input.files = files.files;
       await act(async () => input.dispatchEvent(new window.Event('change', { bubbles: true })));
     };
-    const importButton = Array.from(host.querySelectorAll('button')).find(
+    const importButton = Array.from(document.querySelectorAll('button')).find(
       (button) => button.textContent === 'Import Vertex Credential'
     )!;
     await select('first-alice@example.com.json');
@@ -256,8 +274,8 @@ test('choosing another file during import leaves the new file ready to import', 
     await select('second-bob@example.net.json');
     expect(importButton.disabled).toBe(false);
     await act(async () => finishImport({ status: 'ok', email: 'alice@example.com' }));
-    expect(host.innerHTML).not.toContain('alice@example.com');
-    expect(host.textContent).not.toContain('Credential saved');
+    expect(document.body.innerHTML).not.toContain('alice@example.com');
+    expect(document.body.textContent).not.toContain('Credential saved');
     expect(importButton.disabled).toBe(false);
   } finally {
     await act(async () => root.unmount());
