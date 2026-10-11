@@ -89,6 +89,7 @@ const plugin = (overrides: Partial<PluginListEntry>): PluginListEntry => ({
   effectiveEnabled: true,
   supportsOAuth: true,
   oauthProvider: 'example',
+  supportsQuota: false,
   logo: '',
   configFields: [],
   menus: [],
