@@ -291,22 +291,42 @@ describe('generic plugin quota', () => {
     }
   });
 
-  test('resolves the quota plugin like the backend first pass, then a sole provider', () => {
-    const plugins = [
+  test('routes only unique advertised plugin identifiers', () => {
+    const ignored = [
       quotaPlugin({ id: 'unregistered', quotaProvider: 'kiro', registered: false }),
-      quotaPlugin({ id: 'oauth-match', quotaProvider: 'other', oauthProvider: 'kiro' }),
-      quotaPlugin({ id: 'kiro', quotaProvider: 'other-2' }),
-      quotaPlugin({ id: 'quota-match', quotaProvider: 'kiro' }),
       quotaPlugin({ id: 'no-quota', quotaProvider: 'kiro', supportsQuota: false }),
     ];
-    expect(resolveQuotaPluginId(plugins, ' Kiro ')).toBe('quota-match');
-    expect(resolveQuotaPluginId(plugins.slice(0, 3), 'kiro')).toBe('kiro');
-    expect(resolveQuotaPluginId(plugins.slice(0, 2), 'kiro')).toBe('oauth-match');
-    expect(resolveQuotaPluginId(plugins, 'unknown')).toBeNull();
-    expect(resolveQuotaPluginId([quotaPlugin({ id: 'only', quotaProvider: 'x' })], 'y')).toBe(
-      'only'
-    );
-    expect(resolveQuotaPluginId(plugins, '')).toBeNull();
+    for (const plugin of [
+      quotaPlugin({ id: 'quota-match', quotaProvider: 'kiro' }),
+      quotaPlugin({ id: 'kiro', quotaProvider: 'other' }),
+      quotaPlugin({ id: 'oauth-match', quotaProvider: 'other', oauthProvider: 'kiro' }),
+    ]) {
+      expect(resolveQuotaPluginId([...ignored, plugin], ' Kiro ')).toBe(plugin.id);
+    }
+    expect(resolveQuotaPluginId([quotaPlugin({ id: 'only', quotaProvider: 'x' })], 'y')).toBeNull();
+    expect(resolveQuotaPluginId([quotaPlugin()], '')).toBeNull();
+    expect(resolveQuotaPluginId(ignored, 'kiro')).toBeNull();
+  });
+
+  test('does not forward credentials to ambiguous or unrelated quota plugins', async () => {
+    const post = spyOn(apiClient, 'post').mockResolvedValue({});
+    try {
+      for (const plugins of [
+        [quotaPlugin({ id: 'only', quotaProvider: 'unrelated' })],
+        [quotaPlugin({ id: 'kiro', quotaProvider: 'other' }), quotaPlugin({ id: 'quota-match' })],
+        [quotaPlugin({ id: 'a' }), quotaPlugin({ id: 'b' })],
+      ]) {
+        resetPluginQuotaRouteCache();
+        list.mockResolvedValue(pluginList(plugins));
+        expect(resolveQuotaPluginId(plugins, 'kiro')).toBeNull();
+        await expect(
+          fetchPluginQuota({ name: 'kiro.json', authIndex: '7', quotaProvider: 'kiro' }, i18n.t)
+        ).rejects.toThrow(i18n.t('plugin_quota.plugin_not_found', { provider: 'kiro' }));
+      }
+      expect(post).not.toHaveBeenCalled();
+    } finally {
+      post.mockRestore();
+    }
   });
 
   test('shares the plugin list across credentials and reports a missing plugin', async () => {

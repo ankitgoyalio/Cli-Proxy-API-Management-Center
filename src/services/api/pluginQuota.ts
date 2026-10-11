@@ -64,10 +64,9 @@ const normalizeProviderId = (value: unknown) =>
   typeof value === 'string' ? value.trim().toLowerCase() : '';
 
 /**
- * v8 only serves plugin quotas at /plugins/:id/quota, while credentials advertise a provider.
- * Mirror the backend's first-pass match (quota identifier, plugin ID, then auth provider). A
- * plugin matched only through DescribeQuota's supported providers is not exposed by /plugins,
- * so fall back to the sole quota plugin when exactly one is registered.
+ * v8 serves plugin quotas at /plugins/:id/quota. Its plugin list exposes quota, plugin,
+ * and auth identifiers, but omits DescribeQuota aliases and backend priority order.
+ * Only route a unique advertised match; never guess a plugin for a credential.
  */
 export const resolveQuotaPluginId = (
   plugins: readonly PluginListEntry[],
@@ -75,13 +74,15 @@ export const resolveQuotaPluginId = (
 ): string | null => {
   const target = normalizeProviderId(provider);
   if (!target) return null;
-  const candidates = plugins.filter((plugin) => plugin.registered && plugin.supportsQuota);
-  const match =
-    candidates.find((plugin) => normalizeProviderId(plugin.quotaProvider) === target) ??
-    candidates.find((plugin) => normalizeProviderId(plugin.id) === target) ??
-    candidates.find((plugin) => normalizeProviderId(plugin.oauthProvider) === target) ??
-    (candidates.length === 1 ? candidates[0] : undefined);
-  return match?.id ?? null;
+  const matches = plugins.filter(
+    (plugin) =>
+      plugin.registered &&
+      plugin.supportsQuota &&
+      [plugin.quotaProvider, plugin.id, plugin.oauthProvider].some(
+        (identifier) => normalizeProviderId(identifier) === target
+      )
+  );
+  return matches.length === 1 ? matches[0].id : null;
 };
 
 const PLUGIN_LIST_TTL_MS = 30_000;
