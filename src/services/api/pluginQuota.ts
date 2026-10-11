@@ -3,10 +3,12 @@ import type {
   AntigravityQuotaSubscription,
   AntigravityQuotaSummaryPayload,
   AuthFileItem,
+  PluginListEntry,
   PluginQuotaMetric,
   PluginQuotaState,
 } from '@/types';
 import { apiClient } from './client';
+import { pluginsApi } from './plugins';
 import { normalizeAuthIndex } from '@/utils/authIndex';
 import { buildAntigravityQuotaGroups } from '@/utils/quota';
 
@@ -58,6 +60,57 @@ const normalizeSubscription = (
   };
 };
 
+const normalizeProviderId = (value: unknown) =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+/**
+ * v8 only serves plugin quotas at /plugins/:id/quota, while credentials advertise a provider.
+ * Mirror the backend's first-pass match (quota identifier, plugin ID, then auth provider). A
+ * plugin matched only through DescribeQuota's supported providers is not exposed by /plugins,
+ * so fall back to the sole quota plugin when exactly one is registered.
+ */
+export const resolveQuotaPluginId = (
+  plugins: readonly PluginListEntry[],
+  provider: string
+): string | null => {
+  const target = normalizeProviderId(provider);
+  if (!target) return null;
+  const candidates = plugins.filter((plugin) => plugin.registered && plugin.supportsQuota);
+  const match =
+    candidates.find((plugin) => normalizeProviderId(plugin.quotaProvider) === target) ??
+    candidates.find((plugin) => normalizeProviderId(plugin.id) === target) ??
+    candidates.find((plugin) => normalizeProviderId(plugin.oauthProvider) === target) ??
+    (candidates.length === 1 ? candidates[0] : undefined);
+  return match?.id ?? null;
+};
+
+const PLUGIN_LIST_TTL_MS = 30_000;
+let pluginListCache: {
+  revision: number;
+  expiresAt: number;
+  promise: Promise<PluginListEntry[]>;
+} | null = null;
+
+/** Refresh-all fans out per credential; share one plugin list per connection. */
+const loadQuotaPlugins = (): Promise<PluginListEntry[]> => {
+  const revision = apiClient.getConnectionRevision();
+  const now = Date.now();
+  if (pluginListCache && pluginListCache.revision === revision && pluginListCache.expiresAt > now) {
+    return pluginListCache.promise;
+  }
+  const promise = pluginsApi.list().then((response) => response.plugins);
+  const entry = { revision, expiresAt: now + PLUGIN_LIST_TTL_MS, promise };
+  pluginListCache = entry;
+  promise.catch(() => {
+    if (pluginListCache === entry) pluginListCache = null;
+  });
+  return promise;
+};
+
+export const resetPluginQuotaRouteCache = () => {
+  pluginListCache = null;
+};
+
 export const fetchPluginQuota = async (
   file: AuthFileItem,
   t: TFunction
@@ -67,10 +120,20 @@ export const fetchPluginQuota = async (
 
   const provider = String(file.quotaProvider ?? file['quota_provider'] ?? '').trim();
 
-  const payload = await apiClient.post<PluginQuotaPayload>('/quota/fetch', {
-    ...(provider ? { provider } : {}),
-    auth_index: authIndex,
-  });
+  // Declarative quota_probe credentials have no v8 management route.
+  if (!provider) throw new Error(t('plugin_quota.probe_unsupported'));
+
+  const revision = apiClient.getConnectionRevision();
+  const pluginId = resolveQuotaPluginId(await loadQuotaPlugins(), provider);
+  if (revision !== apiClient.getConnectionRevision()) {
+    throw new DOMException('The management connection changed.', 'AbortError');
+  }
+  if (!pluginId) throw new Error(t('plugin_quota.plugin_not_found', { provider }));
+
+  const payload = await apiClient.post<PluginQuotaPayload>(
+    `/plugins/${encodeURIComponent(pluginId)}/quota`,
+    { auth_index: authIndex }
+  );
   return {
     groups: buildAntigravityQuotaGroups(payload),
     subscription: normalizeSubscription(payload.subscription),

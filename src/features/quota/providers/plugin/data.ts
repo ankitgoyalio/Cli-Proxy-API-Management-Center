@@ -3,7 +3,12 @@ import { fetchPluginQuota } from '@/services/api/pluginQuota';
 import { isDisabledAuthFile, isPluginQuotaFile } from '@/utils/quota';
 import type { QuotaProviderData } from '../types';
 
-export { fetchPluginQuota, normalizePluginQuotaSummary } from '@/services/api/pluginQuota';
+export {
+  fetchPluginQuota,
+  normalizePluginQuotaSummary,
+  resetPluginQuotaRouteCache,
+  resolveQuotaPluginId,
+} from '@/services/api/pluginQuota';
 
 type PluginQuotaData = Awaited<ReturnType<typeof fetchPluginQuota>>;
 
