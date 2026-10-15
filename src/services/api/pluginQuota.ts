@@ -122,10 +122,10 @@ export const fetchPluginQuota = async (
   const provider = String(file.quotaProvider ?? file['quota_provider'] ?? '').trim();
 
   // Declarative quota_probe credentials have no v8 management route.
-  if (!provider) throw new Error(t('plugin_quota.probe_unsupported'));
+  if (!provider && !file.quotaPluginId) throw new Error(t('plugin_quota.probe_unsupported'));
 
   const revision = apiClient.getConnectionRevision();
-  const pluginId = resolveQuotaPluginId(await loadQuotaPlugins(), provider);
+  const pluginId = file.quotaPluginId ?? resolveQuotaPluginId(await loadQuotaPlugins(), provider);
   if (revision !== apiClient.getConnectionRevision()) {
     throw new DOMException('The management connection changed.', 'AbortError');
   }
