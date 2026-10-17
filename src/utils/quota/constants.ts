@@ -74,8 +74,8 @@ export const ANTIGRAVITY_QUOTA_URLS = [
 export const ANTIGRAVITY_CODE_ASSIST_URL =
   'https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist';
 
-// Keep aligned with the backend Antigravity Hub UA (internal/misc/antigravity_version.go):
-// Cloud Code rejects newer models for clients below 2.23.0.
+// Use the backend Antigravity Hub UA format (internal/misc/antigravity_version.go).
+// The client version follows the upstream Management Center compatibility update.
 export const ANTIGRAVITY_HUB_VERSION = '2.23.0';
 export const ANTIGRAVITY_HUB_PLATFORM = 'darwin/arm64';
 

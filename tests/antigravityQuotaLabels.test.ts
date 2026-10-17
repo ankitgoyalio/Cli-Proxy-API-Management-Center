@@ -3,8 +3,64 @@ import {
   resolveAntigravityBucketLabelKey,
   resolveAntigravityGroupLabelKey,
   resolveAntigravityGroupModels,
+  shouldShowAntigravityQuotaAvailable,
 } from '@/features/quota/providers/antigravity/labels';
 import { buildAntigravityQuotaGroups } from '@/utils/quota/builders';
+import { ANTIGRAVITY_REQUEST_HEADERS, buildAntigravityUserAgent } from '@/utils/quota/constants';
+
+describe('Antigravity Hub compatibility', () => {
+  test('uses the Hub user-agent in quota requests and supports explicit client overrides', () => {
+    expect(buildAntigravityUserAgent()).toBe('antigravity/hub/2.23.0 darwin/arm64');
+    expect(ANTIGRAVITY_REQUEST_HEADERS['User-Agent']).toBe(buildAntigravityUserAgent());
+    expect(buildAntigravityUserAgent({ version: '2.24.0', platform: 'linux/x64' })).toBe(
+      'antigravity/hub/2.24.0 linux/x64'
+    );
+  });
+});
+
+describe('Antigravity quota availability', () => {
+  const fiveHour = { label: 'Five Hour Limit Remaining', window: '5h', remainingFraction: 1 };
+  const weekly = { label: 'Weekly Limit Remaining', window: 'weekly', remainingFraction: 0 };
+
+  test('does not advertise a full five-hour bucket as available when its weekly limit is exhausted', () => {
+    expect(shouldShowAntigravityQuotaAvailable(fiveHour, [fiveHour, weekly])).toBe(false);
+    expect(
+      shouldShowAntigravityQuotaAvailable(fiveHour, [
+        fiveHour,
+        { ...weekly, remainingFraction: -1 },
+      ])
+    ).toBe(false);
+  });
+
+  test('allows a full five-hour bucket with remaining weekly quota or no weekly bucket', () => {
+    expect(
+      shouldShowAntigravityQuotaAvailable(fiveHour, [
+        fiveHour,
+        { ...weekly, remainingFraction: 0.1 },
+      ])
+    ).toBe(true);
+    expect(shouldShowAntigravityQuotaAvailable(fiveHour, [fiveHour])).toBe(true);
+  });
+
+  test('uses percentages for partial buckets and leaves other full windows available', () => {
+    expect(shouldShowAntigravityQuotaAvailable({ ...fiveHour, remainingFraction: 0.5 }, [])).toBe(
+      false
+    );
+    expect(shouldShowAntigravityQuotaAvailable(weekly, [weekly])).toBe(false);
+    expect(shouldShowAntigravityQuotaAvailable({ ...weekly, remainingFraction: 1 }, [])).toBe(true);
+    expect(
+      shouldShowAntigravityQuotaAvailable({ label: 'Daily limit', remainingFraction: 1 }, [weekly])
+    ).toBe(true);
+  });
+
+  test('recognizes structured windows when provider labels change', () => {
+    expect(
+      shouldShowAntigravityQuotaAvailable({ ...fiveHour, label: 'Rolling quota' }, [
+        { ...weekly, label: 'Long quota' },
+      ])
+    ).toBe(false);
+  });
+});
 
 describe('Antigravity quota label keys', () => {
   test('matches group names case-insensitively', () => {
