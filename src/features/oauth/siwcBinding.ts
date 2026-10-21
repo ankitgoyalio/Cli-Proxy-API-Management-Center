@@ -55,24 +55,30 @@ export function createSiwcStart<T extends { state: string }>(options: {
   let closed = false;
   let completed = false;
   let state = '';
+  let pending: Promise<void> | undefined;
+  let cancellation: Promise<unknown> = Promise.resolve();
   const cleanup = () => {
-    if (!state || completed) return;
-    const pending = state;
+    if (!state || completed) return cancellation;
+    const pendingState = state;
     state = '';
-    void options.cancel(pending).catch(() => {});
+    cancellation = options.cancel(pendingState).catch(() => {});
+    return cancellation;
   };
   return {
-    start: async () => {
-      if (started || closed) return;
+    start: () => {
+      if (started || closed) return Promise.resolve();
       started = true;
-      try {
-        const result = await options.start();
-        state = result.state;
-        if (closed) cleanup();
-        else options.onResult(result);
-      } catch (error) {
-        if (!closed) options.onError(error);
-      }
+      pending = (async () => {
+        try {
+          const result = await options.start();
+          state = result.state;
+          if (closed) await cleanup();
+          else options.onResult(result);
+        } catch (error) {
+          if (!closed) options.onError(error);
+        }
+      })();
+      return pending;
     },
     complete: () => {
       completed = true;
@@ -80,6 +86,7 @@ export function createSiwcStart<T extends { state: string }>(options: {
     close: () => {
       closed = true;
       cleanup();
+      return (pending ?? Promise.resolve()).then(cleanup).then(() => {});
     },
   };
 }

@@ -45,6 +45,8 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
   const [targets, setTargets] = useState<AuthFileItem[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [name, setName] = useState('');
+  const [revealed, setRevealed] = useState(false);
+  const cleanupRef = useRef<Promise<void>>(Promise.resolve());
   const [run, setRun] = useState(0);
   const [session, setSession] = useState<SiwcBindResponse>();
   const [phase, setPhase] = useState<Phase>('idle');
@@ -104,9 +106,12 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
     const attempt = attempts.begin(name);
     attemptRef.current = attempt;
     const api = captureSiwcBindingApi();
+    const previousCleanup = cleanupRef.current;
     const startup = createSiwcStart({
-      start: () => {
+      start: async () => {
         setPhase('starting');
+        await previousCleanup;
+        if (!attempt.isCurrent()) throw new Error('Binding attempt is no longer active');
         return api.start(name);
       },
       cancel: api.cancel,
@@ -155,7 +160,7 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
     startRef.current = startup;
     return () => {
       attempt.invalidate();
-      startup.close();
+      cleanupRef.current = startup.close();
       if (attemptRef.current === attempt) attemptRef.current = null;
       if (startRef.current === startup) startRef.current = null;
     };
@@ -240,9 +245,20 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
               targets={targets}
               loadFailed={loadFailed}
               value={name}
+              revealed={revealed}
               onChange={setName}
               expiresOf={expiresOf}
             />
+            {targets && targets.length > 0 && (
+              <button
+                type="button"
+                className={dialogStyles.secondary}
+                aria-pressed={revealed}
+                onClick={() => setRevealed((value) => !value)}
+              >
+                {t(revealed ? 'auth_files.hide_email' : 'auth_files.show_email')}
+              </button>
+            )}
             <div>
               <button
                 type="button"
@@ -258,7 +274,7 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
 
         {view === 'flow' && (
           <div className={dialogStyles.stack}>
-            {selected && <TargetSummary file={selected} />}
+            {selected && <TargetSummary file={selected} revealed={revealed} />}
             <ol className={dialogStyles.steps}>
               <OpenStep url={session?.url} />
               <CallbackStep
@@ -278,7 +294,7 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
 
         {view === 'failed' && (
           <div className={dialogStyles.stack}>
-            {selected && <TargetSummary file={selected} />}
+            {selected && <TargetSummary file={selected} revealed={revealed} />}
             <div className={dialogStyles.alert} role="alert">
               {t(`siwc.${phase}`)}
             </div>
@@ -304,7 +320,7 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
                 {t('siwc.ok_hint', {
                   name: presentAuthFile(
                     selected,
-                    false,
+                    revealed,
                     t('auth_files.hidden_email'),
                     t('auth_files.hidden_auth_file_name')
                   ).primary,
@@ -332,12 +348,14 @@ function TargetPicker({
   targets,
   loadFailed,
   value,
+  revealed,
   onChange,
   expiresOf,
 }: {
   targets: AuthFileItem[] | null;
   loadFailed: boolean;
   value: string;
+  revealed: boolean;
   onChange: (name: string) => void;
   expiresOf: (file: AuthFileItem) => string;
 }) {
@@ -366,7 +384,7 @@ function TargetPicker({
         {targets.map((file) => {
           const identity = presentAuthFile(
             file,
-            false,
+            revealed,
             t('auth_files.hidden_email'),
             t('auth_files.hidden_auth_file_name')
           );
@@ -417,11 +435,11 @@ function TargetPicker({
 }
 
 /** 授权开始后的锁定目标：单行摘要，不再可改。 */
-function TargetSummary({ file }: { file: AuthFileItem }) {
+function TargetSummary({ file, revealed }: { file: AuthFileItem; revealed: boolean }) {
   const { t } = useTranslation();
   const identity = presentAuthFile(
     file,
-    false,
+    revealed,
     t('auth_files.hidden_email'),
     t('auth_files.hidden_auth_file_name')
   );
