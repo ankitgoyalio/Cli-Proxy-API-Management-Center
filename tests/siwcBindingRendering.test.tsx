@@ -169,7 +169,9 @@ for (const lateStart of [false, true]) {
       await render('first');
       await act(async () => button('Start authorization').click());
       expect(start).toHaveBeenCalledTimes(1);
-      await act(async () => button('Close').click());
+      await act(async () =>
+        (document.querySelector('button[aria-label="Close"]') as HTMLButtonElement).click()
+      );
       await render('replacement');
       await act(async () => button('Start authorization').click());
       expect(start).toHaveBeenCalledTimes(1);

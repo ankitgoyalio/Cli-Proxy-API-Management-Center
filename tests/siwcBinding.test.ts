@@ -188,7 +188,7 @@ describe('SIWC binding', () => {
       'authFilesApi',
       'listSiwcTargets(response.files)',
       'setRun((value) => value + 1)',
-      '}, [name, run]);',
+      '}, [name, run, cleanupRef]);',
       'type="radio"',
       'notifyAuthFilesChanged()',
       'error.status === 404',
