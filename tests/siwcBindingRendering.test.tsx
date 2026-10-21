@@ -104,6 +104,12 @@ test('SIWC picker masks colliding identities, permits local reveal, and awaits c
     expect(button('Start over')).toBeDefined();
     await act(async () => button('Start over').click());
     expect(cancel).toHaveBeenCalledTimes(1);
+    await act(async () =>
+      (document.querySelectorAll('input[type="radio"]')[1] as HTMLInputElement).click()
+    );
+    await act(async () =>
+      (document.querySelectorAll('input[type="radio"]')[0] as HTMLInputElement).click()
+    );
     await act(async () => button('Start authorization').click());
     expect(start).toHaveBeenCalledTimes(1);
     await act(async () => finishCancellation());
@@ -169,6 +175,10 @@ for (const lateStart of [false, true]) {
       await render('first');
       await act(async () => button('Start authorization').click());
       expect(start).toHaveBeenCalledTimes(1);
+      await act(async () =>
+        (document.querySelector('button[aria-label="Close"]') as HTMLButtonElement).click()
+      );
+      await render('unstarted');
       await act(async () =>
         (document.querySelector('button[aria-label="Close"]') as HTMLButtonElement).click()
       );

@@ -165,7 +165,7 @@ export function SiwcBindDialog({
     startRef.current = startup;
     return () => {
       attempt.invalidate();
-      cleanupRef.current = startup.close();
+      cleanupRef.current = Promise.all([previousCleanup, startup.close()]).then(() => {});
       if (attemptRef.current === attempt) attemptRef.current = null;
       if (startRef.current === startup) startRef.current = null;
     };
