@@ -31,6 +31,7 @@ const CALLBACK_PLACEHOLDER = 'http://127.0.0.1:1455/auth/callback?code=…&state
 
 export interface SiwcBindDialogProps {
   open: boolean;
+  cleanupRef: { current: Promise<void> };
   onClose: () => void;
   onViewAuthFiles: () => void;
 }
@@ -40,13 +41,17 @@ export interface SiwcBindDialogProps {
  * 先在对话框内选择 Codex 凭证，再开始授权；授权开始后凭证锁定，失败可原地重来。
  * 每次打开由父级以新 key 重新挂载，关闭时取消仍在进行的服务端会话。
  */
-export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialogProps) {
+export function SiwcBindDialog({
+  open,
+  cleanupRef,
+  onClose,
+  onViewAuthFiles,
+}: SiwcBindDialogProps) {
   const { t, i18n } = useTranslation();
   const [targets, setTargets] = useState<AuthFileItem[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [name, setName] = useState('');
   const [revealed, setRevealed] = useState(false);
-  const cleanupRef = useRef<Promise<void>>(Promise.resolve());
   const [run, setRun] = useState(0);
   const [session, setSession] = useState<SiwcBindResponse>();
   const [phase, setPhase] = useState<Phase>('idle');
@@ -164,7 +169,7 @@ export function SiwcBindDialog({ open, onClose, onViewAuthFiles }: SiwcBindDialo
       if (attemptRef.current === attempt) attemptRef.current = null;
       if (startRef.current === startup) startRef.current = null;
     };
-  }, [name, run]);
+  }, [name, run, cleanupRef]);
 
   const close = () => {
     attemptRef.current?.invalidate();

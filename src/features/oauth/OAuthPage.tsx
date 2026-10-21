@@ -54,6 +54,7 @@ export function OAuthPage() {
   const [dialog, setDialog] = useState<DialogTarget | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [siwcOpen, setSiwcOpen] = useState(false);
+  const siwcCleanupRef = useRef<Promise<void>>(Promise.resolve());
   // 每次打开换新 key 重新挂载（全新选择与会话）；关闭后保持挂载，让退出动画走完
   const [siwcKey, setSiwcKey] = useState(0);
   const openSiwc = () => {
@@ -221,6 +222,7 @@ export function OAuthPage() {
         <SiwcBindDialog
           key={siwcKey}
           open={siwcOpen}
+          cleanupRef={siwcCleanupRef}
           onClose={() => setSiwcOpen(false)}
           onViewAuthFiles={viewAuthFiles}
         />

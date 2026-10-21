@@ -82,6 +82,7 @@ test('SIWC picker masks colliding identities, permits local reveal, and awaits c
           { i18n },
           createElement(SiwcBindDialog, {
             open: true,
+            cleanupRef: { current: Promise.resolve() },
             onClose: () => {},
             onViewAuthFiles: () => {},
           })
@@ -114,3 +115,75 @@ test('SIWC picker masks colliding identities, permits local reveal, and awaits c
     for (const mock of [targets, start, cancel, capture, poll]) mock.mockRestore();
   }
 });
+
+for (const lateStart of [false, true]) {
+  test(`SIWC reopen waits for ${lateStart ? 'a late start and its' : 'pending'} cancellation`, async () => {
+    const targets = spyOn(authFilesApi, 'list').mockResolvedValue({
+      files: [{ name: 'synthetic.json', type: 'codex', siwcBindSupported: true }],
+    });
+    const client = apiClient.captureConnection();
+    const response = {
+      status: 'ok',
+      state: 'synthetic',
+      url: 'https://example.test/auth',
+      flow: 'siwc_bind',
+      expires_in: 300,
+    };
+    let finishStart!: (value: unknown) => void;
+    const start = spyOn(client, 'post').mockImplementation(() =>
+      lateStart
+        ? new Promise((resolve) => {
+            finishStart = resolve;
+          })
+        : Promise.resolve(response)
+    );
+    let finishCancellation!: () => void;
+    const cancel = spyOn(client, 'delete').mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishCancellation = resolve;
+        })
+    );
+    const capture = spyOn(apiClient, 'captureConnection').mockReturnValue(client);
+    const cleanupRef = { current: Promise.resolve() };
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    const render = (key: string) =>
+      act(async () =>
+        root.render(
+          createElement(
+            I18nextProvider,
+            { i18n },
+            createElement(SiwcBindDialog, {
+              key,
+              open: true,
+              cleanupRef,
+              onClose: () => {},
+              onViewAuthFiles: () => {},
+            })
+          )
+        )
+      );
+    try {
+      await render('first');
+      await act(async () => button('Start authorization').click());
+      expect(start).toHaveBeenCalledTimes(1);
+      await act(async () => button('Close').click());
+      await render('replacement');
+      await act(async () => button('Start authorization').click());
+      expect(start).toHaveBeenCalledTimes(1);
+      if (lateStart) await act(async () => finishStart(response));
+      expect(cancel).toHaveBeenCalledTimes(1);
+      expect(start).toHaveBeenCalledTimes(1);
+      await act(async () => finishCancellation());
+      expect(start).toHaveBeenCalledTimes(2);
+      if (lateStart) await act(async () => finishStart(response));
+    } finally {
+      await act(async () => root.unmount());
+      finishCancellation?.();
+      host.remove();
+      for (const mock of [targets, start, cancel, capture]) mock.mockRestore();
+    }
+  });
+}
