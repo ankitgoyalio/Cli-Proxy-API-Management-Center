@@ -74,6 +74,8 @@ function makeEditor(json: Record<string, unknown> | null): PrefixProxyEditorStat
     disableCoolingTouched: false,
     websockets: false,
     websocketsTouched: false,
+    useSiwc: false,
+    useSiwcTouched: false,
     usingApi: false,
     usingApiTouched: false,
     note: '',
@@ -85,6 +87,52 @@ function makeEditor(json: Record<string, unknown> | null): PrefixProxyEditorStat
     headersError: null,
   };
 }
+
+test('SIWC toggle reflects Codex state, dispatches changes, and respects editing guards', async () => {
+  const host = document.createElement('div');
+  document.body.append(host);
+  const root = createRoot(host);
+  const changes: unknown[] = [];
+  const render = async (providerKey: string, saving = false, disableControls = false) => {
+    await act(async () => {
+      root.render(
+        createElement(
+          MemoryRouter,
+          null,
+          createElement(
+            I18nextProvider,
+            { i18n },
+            createElement(AuthFileDetailsSheet, {
+              editor: { ...makeEditor({ use_siwc: true }), providerKey, useSiwc: true, saving },
+              updatedText: '{"use_siwc":true}',
+              dirty: false,
+              disableControls,
+              onClose: () => {},
+              onCopyText: () => {},
+              onSave: () => {},
+              onChange: (field, value) => changes.push([field, value]),
+            })
+          )
+        )
+      );
+    });
+  };
+  const toggle = () =>
+    document.querySelector<HTMLInputElement>('input[aria-label="Use SIWC (use_siwc)"]');
+  await render('codex');
+  expect(toggle()?.checked).toBe(true);
+  expect(document.body.textContent).toContain(en.auth_files.use_siwc_hint);
+  await act(async () => toggle()!.click());
+  expect(changes).toEqual([['useSiwc', false]]);
+  await render('codex', true);
+  expect(toggle()?.disabled).toBe(true);
+  await render('codex', false, true);
+  expect(toggle()?.disabled).toBe(true);
+  await render('claude');
+  expect(toggle()).toBeNull();
+  await act(async () => root.unmount());
+  host.remove();
+});
 
 test('details sheet masks both previews, reveals locally, and copies original source', async () => {
   const host = document.createElement('div');
